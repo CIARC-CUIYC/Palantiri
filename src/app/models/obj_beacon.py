@@ -1,10 +1,13 @@
-from datetime import datetime
+import random
+from datetime import datetime, timedelta
 from dataclasses import dataclass
+
+from src.app.constants import MAP_HEIGHT, MAP_WIDTH
 
 
 @dataclass
 class BeaconObjective:
-    beacon_id: int
+    id: int
     name: str
     start: datetime
     end: datetime
@@ -14,14 +17,40 @@ class BeaconObjective:
     height: int
     width: int
 
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "start": self.start.isoformat() + "Z",
+            "end": self.end.isoformat() + "Z",
+            "decrease_rate": self.decrease_rate,
+            "attempts_made": self.attempts_made,
+            "description": self.description,
+            "beacon_height": self.height,
+            "beacon_width": self.width
+        }
 
-    def is_active(self, now: datetime):
-        return self.start <= now <= self.end
+    @staticmethod
+    def create_randomized():
+        rand_beac_id = random.randint(1, 100)
+        start = datetime.now() + timedelta(hours=random.randint(1, 3))
+        end = start + timedelta(hours=4)
 
+        return BeaconObjective(
+            id=rand_beac_id,
+            name=f"EBT {rand_beac_id}",
+            start=start,
+            end=end,
+            decrease_rate=0.99,
+            attempts_made=0,
+            description=f"The Beacon {rand_beac_id} is lit! Gondor calls for aid!",
+            height=random.randint(0, MAP_HEIGHT),
+            width=random.randint(0, MAP_WIDTH)
+        )
 
     def info_to_endpoint(self):
         return {
-            "id": self.beacon_id,
+            "id": self.id,
             "name": self.name,
             "start": self.start.isoformat() + "Z",
             "end": self.end.isoformat() + "Z",
@@ -29,3 +58,6 @@ class BeaconObjective:
             "attempts_made": self.attempts_made,
             "description": self.description,
         }
+
+    def is_active(self, now: datetime):
+        return self.start <= now <= self.end

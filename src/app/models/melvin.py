@@ -2,6 +2,7 @@ import time
 import logging
 import threading
 from collections import OrderedDict
+from datetime import timedelta
 
 from src.app.constants import *
 from src.app.helpers import Helpers
@@ -14,6 +15,8 @@ logging.basicConfig(
 
 
 class Melvin:
+    SIM_DUR_PRINTS = 300
+
     def __init__(self):
         self.pos = START_POS.copy()
         self.vel = START_VEL.copy()
@@ -27,6 +30,7 @@ class Melvin:
 
         self._lock = threading.Lock()
         self.logger = logging.getLogger(self.__class__.__name__)
+        self.sim_duration = timedelta(seconds=0)
 
         self.logger.info("Melvin initialized. Default start values set.")
 
@@ -39,6 +43,10 @@ class Melvin:
                 self.handle_transition_time()
 
             self.check_for_transition()
+            self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
+
+            if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
+                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}s")
 
     def update_pos(self):
         self.pos[0] += self.vel[0] * SIM_STEP_DUR

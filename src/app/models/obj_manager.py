@@ -8,53 +8,89 @@ from src.app.models.obj_zoned import ZonedObjective
 class ObjManager:
     def __init__(self):
         self.obj_list = []
-        self.obj_beacon = []
-        self.obj_zoned = []
-
-        self._load_initial_objectives()
-
-    # TODO: needs parameter to controller how many and of which type
-    def randomize_initial_obj(self):
-        pass
-
-    def _load_initial_objectives(self):
-        self.zoned = [
-            ZonedObjective(
-                zo_id=11,
-                name="Precise Picture 10",
-                start=datetime(2025, 3, 25, 11, 30),
-                end=datetime(2025, 3, 25, 13, 30),
-                decrease_rate=0.99,
-                zone=[12465, 8935, 13065, 9535],
-                optic_required="narrow",
-                coverage_required=1.0,
-                description="For no reason at all, could you take a picture of this area?",
-                sprite=None,
-                secret=False
-            ),
-        ]
-
-        self.beacons = [
-            BeaconObjective(
-                beacon_id=113,
-                name="EBT 27",
-                start=datetime(2025, 3, 25, 12, 0),
-                end=datetime(2025, 3, 25, 19, 0),
-                decrease_rate=0.99,
-                attempts_made=0,
-                description="The Beacons are lit! Gondor calls for aid!",
-                height=500,
-                width=800
-
-            ),
-        ]
+        self.existing_ids = set()
+        self.beacon_list = []
+        self.zoned_list = []
 
     def get_all_objectives(self):
         now = sim_clock.get_time()
         return {
-            "zoned_objectives": [z.info_to_endpoint() for z in self.zoned],
-            "beacon_objectives": [b.info_to_endpoint() for b in self.beacons]
+            "zoned_objectives": [z.info_to_endpoint() for z in self.zoned_list],
+            "beacon_objectives": [b.info_to_endpoint() for b in self.beacon_list]
         }
+
+    def create_random_zoned_objective(self, num):
+        new_zo_objs = []
+        for _ in range(num):
+            while True:
+                new_beac = BeaconObjective.create_randomized()
+                if new_beac.id not in self.existing_ids:
+                    self.beacon_list.append(new_beac)
+                    self.obj_list.append(self.beacon_list[-1])
+                    self.existing_ids.add(new_beac.id)
+                    new_zo_objs.append(self.beacon_list[-1])
+                    break
+
+        return new_zo_objs
+
+    def create_random_beacon_objective(self, num):
+        new_beacons = []
+        for _ in range(num):
+            while True:
+                new_zo = ZonedObjective.create_randomized()
+                if new_zo.id not in self.existing_ids:
+                    self.zoned_list.append(ZonedObjective.create_randomized())
+                    self.obj_list.append(self.zoned_list[-1])
+                    self.existing_ids.add(new_zo.id)
+                    new_beacons.append(self.zoned_list[-1])
+                    break
+
+        return new_beacons
+
+    def create_beacon_from_dict(self, beacon_dict):
+        new_beac = BeaconObjective(
+            id=beacon_dict["id"],
+            name=beacon_dict["name"],
+            start=datetime.fromisoformat(beacon_dict["start"]),
+            end=datetime.fromisoformat(beacon_dict["end"]),
+            decrease_rate=beacon_dict["decrease_rate"],
+            attempts_made=beacon_dict["attempts_made"],
+            description=beacon_dict["description"],
+            height=beacon_dict["beacon_height"],
+            width=beacon_dict["beacon_width"]
+        )
+        self.obj_list.append(new_beac)
+        self.beacon_list.append(new_beac)
+        return new_beac
+
+    def create_zoned_from_dict(self, zoned_dict):
+        new_zoned = ZonedObjective(
+            id=zoned_dict["id"],
+            name=zoned_dict["name"],
+            start=datetime.fromisoformat(zoned_dict["start"]),
+            end=datetime.fromisoformat(zoned_dict["end"]),
+            decrease_rate=zoned_dict["decrease_rate"],
+            zone=zoned_dict["zone"],
+            optic_required=zoned_dict["optic_required"],
+            coverage_required=zoned_dict["coverage_required"],
+            description=zoned_dict["description"],
+            sprite=zoned_dict["sprite"],
+            secret=zoned_dict["secret"]
+        )
+        self.obj_list.append(new_zoned)
+        self.zoned_list.append(new_zoned)
+        return new_zoned
+
+    def delete_objective_by_id(self, obj_id: int) -> bool:
+        for obj in self.obj_list:
+            if obj.id == obj_id:
+                self.obj_list.remove(obj)
+                if isinstance(obj, BeaconObjective):
+                    self.beacon_list.remove(obj)
+                else:
+                    self.zoned_list.remove(obj)
+                return True
+        return False
 
 
 obj_manager = ObjManager()

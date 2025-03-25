@@ -1,5 +1,6 @@
 from flask import Flask
-from src.app.routes import observation, reset, control, palantiri, objective
+from src.app.routes.helper_backend import palantiri
+from src.app.routes.original_backend import control, objective, observation, reset
 
 
 def create_app():
