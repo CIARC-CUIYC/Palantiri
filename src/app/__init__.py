@@ -1,5 +1,5 @@
 from flask import Flask
-from src.app.routes import observation, reset, control, palantiri
+from src.app.routes import observation, reset, control, palantiri, objective
 
 
 def create_app():
@@ -9,5 +9,6 @@ def create_app():
     app.register_blueprint(reset.bp)
     app.register_blueprint(control.bp)
     app.register_blueprint(palantiri.bp)
+    app.register_blueprint(objective.bp)
 
     return app
