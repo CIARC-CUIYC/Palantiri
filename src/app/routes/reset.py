@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from app.models.melvin import melvin
+from src.app.models.melvin import melvin
 
 bp = Blueprint('reset', __name__, url_prefix='/reset')
 

@@ -13,6 +13,10 @@ START_FUEL = 100.0
 
 SIM_STEP_DUR = 0.5
 
+TRANSITION_TIME_STANDARD = 3 * 60
+TRANSITION_TIME_FROM_SAFE = 20 * 60
+TRANSITION_TIME_TO_SAFE = 1 * 60
+
 
 class SatStates(Enum):
     DEPLOYMENT = "deployment"
@@ -20,6 +24,16 @@ class SatStates(Enum):
     CHARGE = "charge"
     COMMS = "comms"
     SAFE = "safe"
+    TRANSITION = "transition"
+
+
+class StateBatteryRate(Enum):
+    DEPLOYMENT = -0.025
+    ACQUISITION = -0.2
+    CHARGE = 0.2
+    TRANSITION = 0
+    SAFE = 0.05
+    COMMS = -0.016
 
 
 class CameraAngle(Enum):
