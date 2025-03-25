@@ -1,4 +1,7 @@
 from datetime import datetime
+from typing import Optional
+
+from PIL.Image import Image
 
 from src.app.sim_clock import sim_clock
 from src.app.models.obj_beacon import BeaconObjective
@@ -8,6 +11,7 @@ from src.app.models.obj_zoned import ZonedObjective
 class ObjManager:
     def __init__(self):
         self.obj_list = []
+        self.obj_img_map = {}
         self.existing_ids = set()
         self.beacon_list = []
         self.zoned_list = []
@@ -30,7 +34,7 @@ class ObjManager:
                     self.existing_ids.add(new_beac.id)
                     new_zo_objs.append(self.beacon_list[-1])
                     break
-
+        # TODO: create images for objective
         return new_zo_objs
 
     def create_random_beacon_objective(self, num):
@@ -79,6 +83,7 @@ class ObjManager:
         )
         self.obj_list.append(new_zoned)
         self.zoned_list.append(new_zoned)
+        # TODO: generate image for objective
         return new_zoned
 
     def delete_objective_by_id(self, obj_id: int) -> bool:
@@ -88,9 +93,13 @@ class ObjManager:
                 if isinstance(obj, BeaconObjective):
                     self.beacon_list.remove(obj)
                 else:
+                    self.obj_img_map.pop(obj.id, None)
                     self.zoned_list.remove(obj)
                 return True
         return False
+
+    def get_obj_img(self, obj_id: int) -> Optional[Image]:
+        return self.obj_img_map.get(obj_id, None)
 
 
 obj_manager = ObjManager()
