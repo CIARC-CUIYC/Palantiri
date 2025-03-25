@@ -52,3 +52,17 @@ class Helpers:
             transition_time = TRANSITION_TIME_STANDARD
 
         return transition_time
+
+    @staticmethod
+    def wrap_coordinate(value, max_value):
+        return ((value % max_value) + max_value) % max_value
+
+
+    #TODO: Move to API call. Think about illegal state changes
+    @staticmethod
+    def validate_mode_change(current_state, target_state):
+        if current_state == SatStates.TRANSITION:
+            return False
+        if target_state == SatStates.DEPLOYMENT:
+            return False
+        return True

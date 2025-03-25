@@ -32,24 +32,47 @@ class Melvin:
 
     def next_sim_step(self):
         with self._lock:
-            self.pos[0] += self.vel[0] * SIM_STEP_DUR
-            self.pos[1] += self.vel[1] * SIM_STEP_DUR
+            self.update_pos()
+            self.update_battery()
 
             if self.transition_time:
-                self.transition_time = max(0, self.transition_time - SIM_STEP_DUR)
+                self.handle_transition_time()
 
-                if self.transition_time == 0:
-                    self.transition_time = None
-                    self.melvin_state = self.state_target
-                    self.logger.info(f"Melvin state changed to {self.melvin_state.name}")
+            self.check_for_transition()
 
-            if self.melvin_state != self.state_target and self.state_target is not None and self.melvin_state != SatStates.TRANSITION:
-                self.melvin_state = SatStates.TRANSITION
-                self.logger.info(f"Melvin state changed to {self.melvin_state.name}")
-                self.transition_time = Helpers.get_transition_time(self.melvin_state, self.state_target)
+    def update_pos(self):
+        self.pos[0] += self.vel[0] * SIM_STEP_DUR
+        self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
-            self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
-            self.bat = Helpers.clamp(self.bat, 0, 100)
+        # TODO: Consider check instaed of doing this every time
+        Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
+        Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
+
+    def update_battery(self):
+        self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
+        self.bat = Helpers.clamp(self.bat, 0, 100)
+        if self.bat <= 0 and self.state_target != SatStates.SAFE:
+            self.state_target = SatStates.SAFE
+            self.logger.info("Melvin battery empty. Forced transition to safe mode.")
+
+    def update_vel_and_fuel(self):
+        # TODO
+        pass
+
+    def handle_transition_time(self):
+        self.transition_time = max(0, self.transition_time - SIM_STEP_DUR)
+
+        if self.transition_time == 0:
+            self.transition_time = None
+            self.melvin_state = self.state_target
+            self.logger.info(f"Melvin state changed to {self.melvin_state.name}")
+
+    def check_for_transition(self):
+        if self.melvin_state != self.state_target and self.state_target is not None and self.melvin_state != SatStates.TRANSITION:
+            self.melvin_state = SatStates.TRANSITION
+            self.transition_time = Helpers.get_transition_time(self.melvin_state, self.state_target)
+            self.logger.info(
+                f"Melvin state changed to {self.melvin_state.name}. Next state is {self.state_target.name} in {self.transition_time}s.")
 
     def get_observation(self):
         with self._lock:
@@ -60,7 +83,7 @@ class Melvin:
                 "height_y": round(self.pos[1]),
                 "vx": self.vel[0],
                 "vy": self.vel[1],
-                "battery": self.bat,
+                "battery": round(self.bat, 2),
                 "fuel": self.fuel,
             })
 
@@ -76,10 +99,13 @@ class Melvin:
 
     def update_control(self, vel_x, vel_y, camera_angle, state):
         with self._lock:
-            self.vel[0] = vel_x
-            self.vel[1] = vel_y
-            self.camera_angle = CameraAngle(camera_angle)
-            self.state_target = SatStates(state)
+            if self.melvin_state == SatStates.ACQUISITION:
+                self.vel[0] = vel_x
+                self.vel[1] = vel_y
+                self.camera_angle = CameraAngle(camera_angle)
+            # TODO: this has to be placed in the actual API call
+            if Helpers.validate_mode_change(self.melvin_state, state):
+                self.state_target = SatStates(state)
 
 
 melvin = Melvin()
