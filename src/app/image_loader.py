@@ -130,3 +130,8 @@ def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
         )
     ).save(image_bytes, format="PNG")
     return image_bytes.getvalue()
+
+def get_full_map() -> bytes:
+    image_bytes = BytesIO()
+    map_image.save(image_bytes, format="PNG")
+    return image_bytes.getvalue()
