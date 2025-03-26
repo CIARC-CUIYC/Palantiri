@@ -110,11 +110,13 @@ def load_map_image() -> Image:
     return image
 
 
-map_image = load_map_image()
-obj_image = Image.open("../obj_img.png").convert("RGBA")
+def_map_image = load_map_image()
+current_map_image = def_map_image.copy()
+obj_image = Image.open("obj_img.png").convert("RGBA")
 
-def get_obj_img_copy() -> Image:
-    return obj_image.copy()
+
+def get_obj_img() -> Image.Image:
+    return obj_image
 
 
 def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
@@ -125,7 +127,7 @@ def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
     offset_left = center_left - size / 2
     offset_top = center_top - size / 2
     image_bytes = BytesIO()
-    map_image.crop(
+    current_map_image.crop(
         (
             offset_left + PADDING,
             offset_top + PADDING,
@@ -136,4 +138,25 @@ def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
     return image_bytes.getvalue()
 
 def get_full_map() -> Image:
-    return map_image
+    return current_map_image
+
+def apply_map_overlay(overlay: Image) -> None:
+    (width, height) = overlay.size
+    if width != MAP_WIDTH or height != MAP_HEIGHT:
+        raise ValueError("Overlay must be the same size as the map")
+    alpha = overlay.split()[3]
+    current_map_image.paste(overlay, (0, 0), mask=alpha)
+
+def remove_map_overlay(overlay: Image) -> None:
+    (width, height) = overlay.size
+    if width != MAP_WIDTH or height != MAP_HEIGHT:
+        raise ValueError("Overlay must be the same size as the map")
+    mask_img = overlay.convert("L")
+    # Extract the masked portion
+    masked_region = Image.composite(def_map_image, Image.new("RGBA", def_map_image.size), mask_img)
+
+    # Paste into destination image
+    current_map_image.paste(masked_region, (0, 0), mask_img)
+
+
+

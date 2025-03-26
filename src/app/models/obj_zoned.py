@@ -7,7 +7,7 @@ from ..helpers import Helpers
 from PIL import Image
 
 from src.app.constants import MAP_WIDTH, MAP_HEIGHT, CameraAngle
-from src.app.image_loader import get_obj_img_copy
+from ..image_loader import get_obj_img, PADDING
 
 ZONED__DESCRIPTIONS = [
     "Scout the land between the mountains. Something stirs in the shadows.",
@@ -87,24 +87,24 @@ class ZonedObjective:
         height = zone[3] - zone[1]
         if width < 0 or height < 0:
             return None
-        obj_img = get_obj_img_copy().thumbnail((width, height), Image.Resampling.LANCZOS)
-        overlay_add_size = CameraAngle.WIDE.get_side_length()
-        overlay = Image.new("RGBA", (MAP_WIDTH + overlay_add_size, MAP_HEIGHT + overlay_add_size), (0, 0, 0, 0))
-        insert_pos = (zone[0] + overlay_add_size // 2, zone[1] + overlay_add_size // 2)
+        obj_img = get_obj_img().copy().resize((width, height), Image.Resampling.LANCZOS)
+        print(type(obj_img))
+        overlay = Image.new("RGBA", (MAP_WIDTH + 2 * PADDING, MAP_HEIGHT + 2 * PADDING), (0, 0, 0, 0))
+        insert_pos = (zone[0] + PADDING, zone[1] + PADDING )
         overlay.paste(obj_img, insert_pos)
         if zone[2] < zone[0]:
             # Copy left outer rim to account for wrapping
-            crop_box_x = (MAP_WIDTH, overlay_add_size // 2, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
-            x_new_pos = (overlay_add_size // 2, overlay_add_size // 2)
+            crop_box_x = (MAP_WIDTH, PADDING, MAP_WIDTH + PADDING, MAP_HEIGHT + PADDING)
+            x_new_pos = (PADDING, PADDING)
             crop_x_slice = overlay.crop(crop_box_x)
             overlay.paste(crop_x_slice, x_new_pos)
         if zone[3] < zone[1]:
-            crop_box_y = (overlay_add_size // 2, MAP_HEIGHT, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            crop_box_y = (PADDING, MAP_HEIGHT, MAP_WIDTH + PADDING, MAP_HEIGHT + PADDING)
             crop_y_slice = overlay.crop(crop_box_y)
-            y_new_pos = (overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            y_new_pos = (PADDING, MAP_HEIGHT + PADDING)
             overlay.paste(crop_y_slice, y_new_pos)
         if zone[2] < zone[0] and zone[3] < zone[1]:
-            crop_box_x_y = (MAP_WIDTH, MAP_HEIGHT, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            crop_box_x_y = (MAP_WIDTH, MAP_HEIGHT, MAP_WIDTH + PADDING, MAP_HEIGHT + PADDING)
             crop_x_y_slice = overlay.crop(crop_box_x_y)
             x_y_new_pos = (0, 0)
             overlay.paste(crop_x_y_slice, x_y_new_pos)

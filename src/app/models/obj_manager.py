@@ -4,6 +4,7 @@ from typing import Optional
 from PIL.Image import Image
 from datetime import datetime, timezone
 
+from src.app.image_loader import apply_map_overlay, remove_map_overlay
 from src.app.sim_clock import sim_clock
 from src.app.models.obj_beacon import BeaconObjective
 from src.app.models.obj_zoned import ZonedObjective
@@ -35,6 +36,7 @@ class ObjManager:
                     self.obj_list.append(self.zoned_list[-1])
                     self.existing_ids.add(new_zo.id)
                     new_zo_objs.append(self.zoned_list[-1])
+                    apply_map_overlay(new_zo.overlay)
                     break
         # TODO: create images for objective
         return new_zo_objs
@@ -88,11 +90,12 @@ class ObjManager:
             coverage_required=zoned_dict["coverage_required"],
             description=zoned_dict["description"],
             sprite=zoned_dict["sprite"],
-            secret=zoned_dict["secret"]
+            secret=zoned_dict["secret"],
             overlay=overlay
         )
         self.obj_list.append(new_zoned)
         self.zoned_list.append(new_zoned)
+        apply_map_overlay(new_zoned.overlay)
         # TODO: generate image for objective
         return new_zoned
 
@@ -105,6 +108,7 @@ class ObjManager:
                 else:
                     self.obj_img_map.pop(obj.id, None)
                     self.zoned_list.remove(obj)
+                    remove_map_overlay(obj.overlay)
                 return True
         return False
 
