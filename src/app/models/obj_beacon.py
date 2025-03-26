@@ -1,6 +1,7 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
+from time import timezone
 
 from src.app.constants import MAP_HEIGHT, MAP_WIDTH
 
@@ -21,7 +22,7 @@ class BeaconObjective:
         return {
             "id": self.id,
             "name": self.name,
-            "start": self.start.isoformat() + "Z",
+            "start": self.start.isoformat().replace("+00:00", "Z"),
             "end": self.end.isoformat() + "Z",
             "decrease_rate": self.decrease_rate,
             "attempts_made": self.attempts_made,
@@ -33,7 +34,7 @@ class BeaconObjective:
     @staticmethod
     def create_randomized():
         rand_beac_id = random.randint(1, 100)
-        start = datetime.now() + timedelta(hours=random.randint(1, 3))
+        start = datetime.now(timezone.utc) + timedelta(hours=random.randint(1, 3))
         end = start + timedelta(hours=4)
 
         return BeaconObjective(
@@ -61,3 +62,6 @@ class BeaconObjective:
 
     def is_active(self, now: datetime):
         return self.start <= now <= self.end
+
+    def pos(self):
+        return self.width, self.height
