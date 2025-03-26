@@ -1,4 +1,5 @@
 from enum import Enum
+from unittest import case
 
 MAP_WIDTH = 21600
 MAP_HEIGHT = 10800
@@ -48,3 +49,10 @@ class CameraAngle(Enum):
     NORMAL = "normal"
     WIDE = "wide"
 
+    def get_side_length(self):
+        if self == CameraAngle.NARROW:
+            return 600
+        elif self == CameraAngle.NORMAL:
+            return 800
+        elif self == CameraAngle.WIDE:
+            return 1000
