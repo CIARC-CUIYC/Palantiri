@@ -58,7 +58,7 @@ class Melvin:
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
         self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
-        # TODO: Consider check instaed of doing this every time
+        # TODO: Consider check instead of doing this every time
         self.pos[0] = Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
         self.pos[1] = Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
 

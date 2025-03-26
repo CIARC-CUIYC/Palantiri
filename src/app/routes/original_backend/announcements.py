@@ -30,7 +30,7 @@ def stream_beacon_pings():
             if start_of_new_min:
                 melvin_pos_current = melvin.pos
                 for beacon in obj_manager.beacon_list:
-                    actual_beacon_positon = [beacon.width, beacon.height]
+                    actual_beacon_position = [beacon.width, beacon.height]
                     if beacon.is_active(now):
                         true_distance = Helpers.unwrapped_to(
                             melvin_pos_current,
@@ -38,7 +38,7 @@ def stream_beacon_pings():
                         )
 
                         if true_distance <= BEACON_MAX_DETECT_RANGE:
-                            noisy_distance = Helpers.receive_noisy_measurement(actual_beacon_positon,
+                            noisy_distance = Helpers.receive_noisy_measurement(actual_beacon_position,
                                                                                melvin_pos_current)
 
                             print(f"Sending SSE ping: ID_{beacon.id} DISTANCE_{noisy_distance:.2f}")

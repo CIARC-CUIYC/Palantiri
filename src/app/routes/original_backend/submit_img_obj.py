@@ -1,5 +1,4 @@
-from flask import Blueprint, send_file, request
-from src.app.models.melvin import melvin
+from flask import Blueprint, request
 from PIL import Image, ImageChops
 import logging
 

@@ -28,7 +28,7 @@ def guess_beacon():
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
     beacon_id = data['beacon_id']
-    guess_pos = data['guess'][::-1]  # has to be flipped because its given in [height, width]
+    guess_pos = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
 
     BeaconValidation.validate_input_beacon_position(guess_pos)
 
