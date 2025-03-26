@@ -1,8 +1,7 @@
-from datetime import datetime
+import random
 from typing import Optional
 
 from PIL.Image import Image
-from datetime import datetime, timezone
 from datetime import datetime, timezone
 
 from src.app.sim_clock import sim_clock
@@ -29,12 +28,13 @@ class ObjManager:
         new_zo_objs = []
         for _ in range(num):
             while True:
-                new_beac = BeaconObjective.create_randomized()
-                if new_beac.id not in self.existing_ids:
-                    self.beacon_list.append(new_beac)
-                    self.obj_list.append(self.beacon_list[-1])
-                    self.existing_ids.add(new_beac.id)
-                    new_zo_objs.append(self.beacon_list[-1])
+                obj_id = random.randint(1, 100)
+                if obj_id not in self.existing_ids:
+                    new_zo = ZonedObjective.create_randomized(obj_id)
+                    self.zoned_list.append(new_zo)
+                    self.obj_list.append(self.zoned_list[-1])
+                    self.existing_ids.add(new_zo.id)
+                    new_zo_objs.append(self.zoned_list[-1])
                     break
         # TODO: create images for objective
         return new_zo_objs
@@ -43,11 +43,12 @@ class ObjManager:
         new_beacons = []
         for _ in range(num):
             while True:
-                new_zo = ZonedObjective.create_randomized()
-                if new_zo.id not in self.existing_ids:
-                    self.zoned_list.append(ZonedObjective.create_randomized())
+                obj_id = random.randint(1, 100)
+                if obj_id not in self.existing_ids:
+                    new_bo = BeaconObjective.create_randomized(obj_id)
+                    self.zoned_list.append(new_bo)
                     self.obj_list.append(self.zoned_list[-1])
-                    self.existing_ids.add(new_zo.id)
+                    self.existing_ids.add(new_bo.id)
                     new_beacons.append(self.zoned_list[-1])
                     break
 

@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from typing import Optional
 
-from src.app.constants import MAP_WIDTH, MAP_HEIGHT
+from src.app.constants import MAP_WIDTH, MAP_HEIGHT, CameraAngle
 
 ZONED__DESCRIPTIONS = [
     "Scout the land between the mountains. Something stirs in the shadows.",
@@ -42,18 +42,21 @@ class ZonedObjective:
         }
 
     @staticmethod
-    def create_randomized():
-        rand_zo_id = random.randint(1, 100)
-
+    def create_randomized(rand_zo_id: int):
         start = datetime.now(timezone.utc) + timedelta(hours=random.randint(1, 3))
         end = start + timedelta(hours=random.randint(2, 6))
 
-        rand_x_coord = random.randint(0, MAP_WIDTH)
-        rand_y_coord = random.randint(0, MAP_HEIGHT)
+        rand_x_coord = random.randint(0, MAP_WIDTH - 1)
+        rand_y_coord = random.randint(0, MAP_HEIGHT - 1)
         # TODO: Fix hardcoded numbers!
-        rand_zone = [rand_x_coord, rand_x_coord + 600, rand_y_coord, rand_y_coord + 600]
+        rand_angle = random.choice(list(CameraAngle))
+        dy = rand_angle.get_side_length()
+        dx_fac = random.randint(1, 4)
+        dx = dx_fac * dy
+        rand_zone = [rand_x_coord, rand_y_coord, rand_x_coord + dx, rand_y_coord + dy]
 
-        # TODO: Create all types of ZO! (Precise, Wide, etc.)
+        rand_coverage = random.uniform(0.6, 1.0)
+
         return ZonedObjective(
             id=rand_zo_id,
             name=f"Precise Picture {rand_zo_id}",
@@ -61,11 +64,11 @@ class ZonedObjective:
             end=end,
             decrease_rate=0.99,
             zone=rand_zone,
-            optic_required="narrow",  # TODO: Randomize for wide pictures
-            coverage_required=1.0,
+            optic_required=rand_angle.value(),
+            coverage_required=rand_coverage,
             description=random.choice(ZONED__DESCRIPTIONS),
             sprite=None,
-            secret=False  # TODO: Implement wide images
+            secret=False # TODO: implement secret objectives?
         )
 
     def info_to_endpoint(self):
