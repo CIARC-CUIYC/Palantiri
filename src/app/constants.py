@@ -1,5 +1,4 @@
 from enum import Enum
-from unittest import case
 
 MAP_WIDTH = 21600
 MAP_HEIGHT = 10800
@@ -13,6 +12,11 @@ START_VEL_Y = 5.49
 START_VEL = [START_VEL_X, START_VEL_Y]
 MIN_ALLOWED_VEL = 3.0
 MAX_ALLOWED_VEL = 71.0
+MAX_ALLOWED_VEL_ANGLE = 170
+
+ACC_CONST = 0.04
+
+FUEL_COST = 0.03
 
 START_BAT = 100.0
 START_FUEL = 100.0
@@ -35,6 +39,10 @@ class SatStates(Enum):
     SAFE = "safe"
     TRANSITION = "transition"
 
+    @staticmethod
+    def is_valid_sat_state(input_state):
+        return input_state in {state.value for state in SatStates}
+
 
 # TODO: Check correct values
 class StateBatteryRate(Enum):
@@ -50,6 +58,10 @@ class CameraAngle(Enum):
     NARROW = "narrow"
     NORMAL = "normal"
     WIDE = "wide"
+
+    @staticmethod
+    def is_valid_camera_angle(input_angle):
+        return input_angle in {angle.value for angle in CameraAngle}
 
     def get_side_length(self):
         if self == CameraAngle.NARROW:

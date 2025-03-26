@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates
+from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates, CameraAngle
 from src.app.helpers import Helpers
 from src.app.models.melvin import melvin
 from werkzeug.exceptions import BadRequest
@@ -53,8 +53,8 @@ class ControlValidation:
 
     @staticmethod
     def validate_input_state(input_state):
-        if input_state not in melvin.states:
-            raise BadRequest("Invalid target state.")
+        if not SatStates.is_valid_sat_state(input_state):
+            raise BadRequest("Invalid target state")
 
         if melvin.melvin_state == SatStates.TRANSITION:
             raise BadRequest("Target state cannot be set during transition.")
@@ -67,14 +67,17 @@ class ControlValidation:
 
     @staticmethod
     def validate_input_angle(input_angle):
-        if input_angle not in melvin.camera_angles:
+        if not CameraAngle.is_valid_camera_angle(input_angle):
             raise BadRequest("Invalid camera angle.")
 
-        if melvin.melvin_state != SatStates.ACQUISITION:
-            raise BadRequest("Camera angle can only be set during acquisition.")
+    if melvin.melvin_state != SatStates.ACQUISITION and melvin.melvin_state != SatStates.DEPLOYMENT:
+        raise BadRequest("Camera angle can only be set during acquisition.")
 
     @staticmethod
     def validate_input_velocity(input_vel):
+        if input_vel[0] == melvin.vel[0] and input_vel[1] == melvin.vel[1]:
+            return
+
         if input_vel[0] < 0 or input_vel[1] < 0:
             raise BadRequest("Velocity must be positive.")
 
