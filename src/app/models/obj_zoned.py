@@ -1,5 +1,5 @@
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from typing import Optional
 
@@ -33,7 +33,7 @@ class ZonedObjective:
         return {
             "id": self.id,
             "name": self.name,
-            "start": self.start.isoformat() + "Z",
+            "start": self.start.isoformat().replace("+00:00", "Z"),
             "end": self.end.isoformat() + "Z",
             "decrease_rate": self.decrease_rate,
             "zone": self.zone,
@@ -45,7 +45,7 @@ class ZonedObjective:
     def create_randomized():
         rand_zo_id = random.randint(1, 100)
 
-        start = datetime.now() + timedelta(hours=random.randint(1, 3))
+        start = datetime.now(timezone.utc) + timedelta(hours=random.randint(1, 3))
         end = start + timedelta(hours=random.randint(2, 6))
 
         rand_x_coord = random.randint(0, MAP_WIDTH)
