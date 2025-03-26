@@ -111,8 +111,6 @@ class Melvin:
                 self.vel[0] = vel_x
                 self.vel[1] = vel_y
                 self.camera_angle = CameraAngle(camera_angle)
-            # TODO: this has to be placed in the actual API call
-            if Helpers.validate_mode_change(self.melvin_state, state):
                 self.state_target = SatStates(state)
 
 
