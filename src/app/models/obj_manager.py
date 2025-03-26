@@ -19,7 +19,6 @@ class ObjManager:
         self.zoned_list = []
 
     def get_all_objectives(self):
-        now = sim_clock.get_time().replace(tzinfo=timezone.utc)
         return {
             "zoned_objectives": [z.info_to_endpoint() for z in self.zoned_list],
             "beacon_objectives": [b.info_to_endpoint() for b in self.beacon_list]

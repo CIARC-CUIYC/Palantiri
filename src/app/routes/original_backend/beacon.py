@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from werkzeug.exceptions import BadRequest
 
-from src.app.constants import BEACON_GUESS_TOLERANCE
+from src.app.constants import BEACON_GUESS_TOLERANCE, MAP_HEIGHT, MAP_WIDTH
 from src.app.helpers import Helpers
 from src.app.models.obj_manager import obj_manager
 
@@ -28,7 +28,9 @@ def guess_beacon():
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
     beacon_id = data['beacon_id']
-    guess_pos = data['guess'][::-1]  # has to be flipped because its given in [height, width]
+    guess_pos = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
+
+    BeaconValidation.validate_input_beacon_position(guess_pos)
 
     beacon = next((b for b in obj_manager.beacon_list if b.id == beacon_id), None)
     if not beacon:
@@ -41,12 +43,24 @@ def guess_beacon():
 
     true_beac_pos = [beacon.width, beacon.height]
 
-    distance = Helpers.unwrapped_to(true_beac_pos, guess_pos)
+    guess_beac_distance = Helpers.unwrapped_to(true_beac_pos, guess_pos)
     beacon_guess_tracker[beacon_id] += 1
 
-    if distance <= BEACON_GUESS_TOLERANCE:
+    if guess_beac_distance <= BEACON_GUESS_TOLERANCE:
         obj_manager.obj_list.remove(beacon)
         obj_manager.beacon_list.remove(beacon)
-        return jsonify({"result": "success", "distance": distance, "guesses_used": beacon_guess_tracker[beacon_id]})
+        return jsonify({"result": "success", "guess_beac_distance": guess_beac_distance,
+                        "guesses_used": beacon_guess_tracker[beacon_id]})
     else:
-        return jsonify({"result": "failure", "distance": distance, "guesses_used": beacon_guess_tracker[beacon_id]})
+        return jsonify({"result": "failure", "guesses_used": beacon_guess_tracker[beacon_id]})
+
+
+class BeaconValidation:
+    @staticmethod
+    def validate_input_beacon_position(input_guess_beacon_pos):
+        if len(input_guess_beacon_pos) != 2:
+            raise BadRequest("Guess must hold an x and y coordinate.")
+
+        if Helpers.is_pos_in_bounds(input_guess_beacon_pos) is False:
+            raise BadRequest(
+                f"Guess must be within the bounds of the beacon. X bounds: [0, {MAP_WIDTH}], Y bounds: [0, {MAP_HEIGHT}].")
