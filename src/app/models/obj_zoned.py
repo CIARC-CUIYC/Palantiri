@@ -2,8 +2,12 @@ import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from typing import Optional
+from ..helpers import Helpers
+
+from PIL import Image
 
 from src.app.constants import MAP_WIDTH, MAP_HEIGHT, CameraAngle
+from src.app.image_loader import get_obj_img_copy
 
 ZONED__DESCRIPTIONS = [
     "Scout the land between the mountains. Something stirs in the shadows.",
@@ -28,6 +32,7 @@ class ZonedObjective:
     description: str
     sprite: Optional[str]
     secret: bool
+    overlay: Optional[Image]
 
     def to_dict(self):
         return {
@@ -53,10 +58,14 @@ class ZonedObjective:
         dy = rand_angle.get_side_length()
         dx_fac = random.randint(1, 4)
         dx = dx_fac * dy
-        rand_zone = [rand_x_coord, rand_y_coord, rand_x_coord + dx, rand_y_coord + dy]
+
+        x_end = Helpers.wrap_coordinate(rand_x_coord + dx, MAP_WIDTH)
+        y_end = Helpers.wrap_coordinate(rand_y_coord + dy, MAP_HEIGHT)
+
+        rand_zone = [rand_x_coord, rand_y_coord, x_end, y_end]
 
         rand_coverage = random.uniform(0.6, 1.0)
-
+        overlay = ZonedObjective.get_overlay(rand_zone)
         return ZonedObjective(
             id=rand_zo_id,
             name=f"Precise Picture {rand_zo_id}",
@@ -68,8 +77,39 @@ class ZonedObjective:
             coverage_required=rand_coverage,
             description=random.choice(ZONED__DESCRIPTIONS),
             sprite=None,
-            secret=False # TODO: implement secret objectives?
+            secret=False, # TODO: implement secret objectives?
+            overlay=overlay
         )
+
+    @staticmethod
+    def get_overlay(zone: list[int]) -> Optional[Image]:
+        width = zone[2] - zone[0]
+        height = zone[3] - zone[1]
+        if width < 0 or height < 0:
+            return None
+        obj_img = get_obj_img_copy().thumbnail((width, height), Image.Resampling.LANCZOS)
+        overlay_add_size = CameraAngle.WIDE.get_side_length()
+        overlay = Image.new("RGBA", (MAP_WIDTH + overlay_add_size, MAP_HEIGHT + overlay_add_size), (0, 0, 0, 0))
+        insert_pos = (zone[0] + overlay_add_size // 2, zone[1] + overlay_add_size // 2)
+        overlay.paste(obj_img, insert_pos)
+        if zone[2] < zone[0]:
+            # Copy left outer rim to account for wrapping
+            crop_box_x = (MAP_WIDTH, overlay_add_size // 2, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            x_new_pos = (overlay_add_size // 2, overlay_add_size // 2)
+            crop_x_slice = overlay.crop(crop_box_x)
+            overlay.paste(crop_x_slice, x_new_pos)
+        if zone[3] < zone[1]:
+            crop_box_y = (overlay_add_size // 2, MAP_HEIGHT, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            crop_y_slice = overlay.crop(crop_box_y)
+            y_new_pos = (overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            overlay.paste(crop_y_slice, y_new_pos)
+        if zone[2] < zone[0] and zone[3] < zone[1]:
+            crop_box_x_y = (MAP_WIDTH, MAP_HEIGHT, MAP_WIDTH + overlay_add_size // 2, MAP_HEIGHT + overlay_add_size // 2)
+            crop_x_y_slice = overlay.crop(crop_box_x_y)
+            x_y_new_pos = (0, 0)
+            overlay.paste(crop_x_y_slice, x_y_new_pos)
+        return overlay
+
 
     def info_to_endpoint(self):
         if self.secret:

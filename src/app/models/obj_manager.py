@@ -76,7 +76,7 @@ class ObjManager:
     def create_zoned_from_dict(self, zoned_dict):
         start = datetime.fromisoformat(zoned_dict["start"].replace("Z", "+00:00"))
         end = datetime.fromisoformat(zoned_dict["end"].replace("Z", "+00:00"))
-
+        overlay = ZonedObjective.get_overlay(zoned_dict["zone"])
         new_zoned = ZonedObjective(
             id=zoned_dict["id"],
             name=zoned_dict["name"],
@@ -89,6 +89,7 @@ class ObjManager:
             description=zoned_dict["description"],
             sprite=zoned_dict["sprite"],
             secret=zoned_dict["secret"]
+            overlay=overlay
         )
         self.obj_list.append(new_zoned)
         self.zoned_list.append(new_zoned)

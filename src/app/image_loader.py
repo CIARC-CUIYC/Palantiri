@@ -111,6 +111,10 @@ def load_map_image() -> Image:
 
 
 map_image = load_map_image()
+obj_image = Image.open("../obj_img.png").convert("RGBA")
+
+def get_obj_img_copy() -> Image:
+    return obj_image.copy()
 
 
 def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
@@ -131,7 +135,5 @@ def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
     ).save(image_bytes, format="PNG")
     return image_bytes.getvalue()
 
-def get_full_map() -> bytes:
-    image_bytes = BytesIO()
-    map_image.save(image_bytes, format="PNG")
-    return image_bytes.getvalue()
+def get_full_map() -> Image:
+    return map_image
