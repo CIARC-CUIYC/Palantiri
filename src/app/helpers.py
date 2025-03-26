@@ -121,3 +121,11 @@ class Helpers:
                 options.append((to_target, to_target_abs_sq))
 
         return options
+
+    @staticmethod
+    def calculate_absolute_velocity(velocity):
+        return math.sqrt(velocity[0] ** 2 + velocity[1] ** 2)
+
+    @staticmethod
+    def is_pos_in_bounds(position):
+        return 0 <= position[0] < MAP_WIDTH and 0 <= position[1] < MAP_HEIGHT
