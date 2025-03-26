@@ -59,6 +59,12 @@ class ControlValidation:
         if melvin.melvin_state == SatStates.TRANSITION:
             raise BadRequest("Target state cannot be set during transition.")
 
+        if input_state == SatStates.DEPLOYMENT:
+            raise BadRequest("Target state cannot be set to DEPLOYMENT.")
+
+        if input_state == SatStates.TRANSITION:
+            raise BadRequest("Target state cannot be set to TRANSITION.")
+
     @staticmethod
     def validate_input_angle(input_angle):
         if input_angle not in melvin.camera_angles:
