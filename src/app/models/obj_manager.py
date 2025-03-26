@@ -1,8 +1,11 @@
+import random
 from typing import Optional
 
 from PIL.Image import Image
-from datetime import datetime
+from datetime import datetime, timezone
 
+from src.app.image_loader import apply_map_overlay, remove_map_overlay
+from src.app.sim_clock import sim_clock
 from src.app.models.obj_beacon import BeaconObjective
 from src.app.models.obj_zoned import ZonedObjective
 
@@ -25,12 +28,14 @@ class ObjManager:
         new_zo_objs = []
         for _ in range(num):
             while True:
-                new_beac = BeaconObjective.create_randomized()
-                if new_beac.id not in self.existing_ids:
-                    self.beacon_list.append(new_beac)
-                    self.obj_list.append(self.beacon_list[-1])
-                    self.existing_ids.add(new_beac.id)
-                    new_zo_objs.append(self.beacon_list[-1])
+                obj_id = random.randint(1, 100)
+                if obj_id not in self.existing_ids:
+                    new_zo = ZonedObjective.create_randomized(obj_id)
+                    self.zoned_list.append(new_zo)
+                    self.obj_list.append(self.zoned_list[-1])
+                    self.existing_ids.add(new_zo.id)
+                    new_zo_objs.append(self.zoned_list[-1])
+                    apply_map_overlay(new_zo.overlay)
                     break
         # TODO: create images for objective
         return new_zo_objs
@@ -39,11 +44,12 @@ class ObjManager:
         new_beacons = []
         for _ in range(num):
             while True:
-                new_zo = ZonedObjective.create_randomized()
-                if new_zo.id not in self.existing_ids:
-                    self.zoned_list.append(ZonedObjective.create_randomized())
+                obj_id = random.randint(1, 100)
+                if obj_id not in self.existing_ids:
+                    new_bo = BeaconObjective.create_randomized(obj_id)
+                    self.zoned_list.append(new_bo)
                     self.obj_list.append(self.zoned_list[-1])
-                    self.existing_ids.add(new_zo.id)
+                    self.existing_ids.add(new_bo.id)
                     new_beacons.append(self.zoned_list[-1])
                     break
 
@@ -71,7 +77,7 @@ class ObjManager:
     def create_zoned_from_dict(self, zoned_dict):
         start = datetime.fromisoformat(zoned_dict["start"].replace("Z", "+00:00"))
         end = datetime.fromisoformat(zoned_dict["end"].replace("Z", "+00:00"))
-
+        overlay = ZonedObjective.get_overlay(zoned_dict["zone"])
         new_zoned = ZonedObjective(
             id=zoned_dict["id"],
             name=zoned_dict["name"],
@@ -83,10 +89,12 @@ class ObjManager:
             coverage_required=zoned_dict["coverage_required"],
             description=zoned_dict["description"],
             sprite=zoned_dict["sprite"],
-            secret=zoned_dict["secret"]
+            secret=zoned_dict["secret"],
+            overlay=overlay
         )
         self.obj_list.append(new_zoned)
         self.zoned_list.append(new_zoned)
+        apply_map_overlay(new_zoned.overlay)
         # TODO: generate image for objective
         return new_zoned
 
@@ -99,6 +107,7 @@ class ObjManager:
                 else:
                     self.obj_img_map.pop(obj.id, None)
                     self.zoned_list.remove(obj)
+                    remove_map_overlay(obj.overlay)
                 return True
         return False
 

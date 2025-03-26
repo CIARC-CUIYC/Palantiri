@@ -20,7 +20,7 @@ def submit_img_obj():
         actual_img = obj_manager.get_obj_img(obj_id)
 
         diff = ImageChops.difference(uploaded_img, actual_img)
-        mean_diff = sum(list(diff.getdata())) / len(actual_img.width * actual_img.height * 3)
+        mean_diff = sum(list(diff.getdata())) / (actual_img.width * actual_img.height * 3)
 
         obj_manager.delete_objective_by_id(obj_id)
         logger = logging.getLogger(__name__)

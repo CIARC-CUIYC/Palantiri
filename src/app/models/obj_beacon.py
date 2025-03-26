@@ -32,8 +32,7 @@ class BeaconObjective:
         }
 
     @staticmethod
-    def create_randomized():
-        rand_beac_id = random.randint(1, 100)
+    def create_randomized(rand_beac_id: int):
         start = datetime.now(timezone.utc) + timedelta(hours=random.randint(1, 3))
         end = start + timedelta(hours=4)
 
