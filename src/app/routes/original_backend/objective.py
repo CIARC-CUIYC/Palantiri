@@ -11,6 +11,17 @@ def objective():
     return jsonify(obj_manager.get_all_objectives())
 
 
+"""
+The expected JSON body for this endpoint is:
+{
+  "num_random_zoned": 0,
+  "num_random_beacon": 0,
+  "zoned_objectives": [],    // optional
+  "beacon_objectives": []     // optional
+}
+"""
+
+
 @bp.route('/', methods=['PUT'])
 def add_objectives():
     data = request.get_json()
@@ -57,6 +68,7 @@ def add_objectives():
 
     return jsonify(responses), 201
 
+
 @bp.route('/', methods=['DELETE'])
 def delete_objective():
     obj_id = request.args.get('id', type=int)
@@ -70,4 +82,3 @@ def delete_objective():
         return jsonify({"message": f"Objective with ID {obj_id} deleted."})
     else:
         return jsonify({"message": f"Objective with ID {obj_id} not found."}), 404
-

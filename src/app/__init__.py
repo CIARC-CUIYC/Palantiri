@@ -1,6 +1,6 @@
 from flask import Flask
 from src.app.routes.helper_backend import palantiri
-from src.app.routes.original_backend import control, objective, observation, reset
+from src.app.routes.original_backend import control, objective, observation, reset, announcements, beacon
 
 
 def create_app():
@@ -11,5 +11,7 @@ def create_app():
     app.register_blueprint(control.bp)
     app.register_blueprint(palantiri.bp)
     app.register_blueprint(objective.bp)
+    app.register_blueprint(beacon.bp)
+    app.register_blueprint(announcements.bp)
 
     return app
