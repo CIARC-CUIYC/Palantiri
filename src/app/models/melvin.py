@@ -28,6 +28,8 @@ class Melvin:
         self.state_target = None
         self.transition_time = None
 
+        self.vel_plan = None
+
         self._lock = threading.Lock()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.sim_duration = timedelta(seconds=0)
@@ -42,19 +44,23 @@ class Melvin:
             if self.transition_time:
                 self.handle_transition_time()
 
+            if self.vel_plan:
+                self.update_velocity()
+                self.fuel -= FUEL_COST
+
             self.check_for_transition()
             self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
 
             if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
-                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}s")
+                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}")
 
     def update_pos(self):
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
         self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
         # TODO: Consider check instaed of doing this every time
-        Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
-        Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
+        self.pos[0] = Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
+        self.pos[1] = Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
 
     def update_battery(self):
         self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
@@ -89,10 +95,10 @@ class Melvin:
                 "angle": self.camera_angle.value,
                 "width_x": round(self.pos[0]),
                 "height_y": round(self.pos[1]),
-                "vx": self.vel[0],
-                "vy": self.vel[1],
+                "vx": round(self.vel[0], 2),
+                "vy": round(self.vel[1], 2),
                 "battery": round(self.bat, 2),
-                "fuel": self.fuel,
+                "fuel": round(self.fuel, 2)
             })
 
     def reset(self):
@@ -105,15 +111,36 @@ class Melvin:
             self.camera_angle = CameraAngle.NORMAL
             self.logger.info("Melvin reset.")
 
-    def update_control(self, vel_x, vel_y, camera_angle, state):
+    def update_state(self, state):
+        with self._lock:
+            if self.melvin_state != SatStates.TRANSITION:
+                self.state_target = SatStates(state)
+                self.logger.info(f"Melvin target state changed to {state}")
+
+    # TODO: Remove unnecessary double checks
+    def update_control(self, vel_x, vel_y, camera_angle):
         with self._lock:
             if self.melvin_state == SatStates.ACQUISITION:
-                self.vel[0] = vel_x
-                self.vel[1] = vel_y
                 self.camera_angle = CameraAngle(camera_angle)
-            # TODO: this has to be placed in the actual API call
-            if Helpers.validate_mode_change(self.melvin_state, state):
-                self.state_target = SatStates(state)
+                self.set_target_velocity([vel_x, vel_y])
+
+    def set_target_velocity(self, target_vel):
+        ok, result = Helpers.validate_velocity_change(self.vel, target_vel)
+
+        if not ok:
+            print(f"[Melvin] Velocity change rejected: {result}")
+            return False
+
+        self.vel_plan = result  # list of (vx, vy) steps
+        print(f"[Melvin] Velocity plan accepted: {len(self.vel_plan)} steps")
+        return True
+
+    def update_velocity(self):
+        next_v = self.vel_plan.pop(0)
+        self.vel = list(next_v)
+
+        if not self.vel_plan:
+            self.vel_plan = None
 
 
 melvin = Melvin()

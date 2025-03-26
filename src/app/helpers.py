@@ -3,7 +3,8 @@ import random
 import numpy as np
 from typing import List
 from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
-    TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT
+    TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST, MAX_ALLOWED_VEL_ANGLE, \
+    MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SIM_STEP_DUR
 
 
 class Helpers:
@@ -61,15 +62,6 @@ class Helpers:
     def wrap_coordinate(value, max_value):
         return ((value % max_value) + max_value) % max_value
 
-    # TODO: Move to API call. Think about illegal state changes
-    @staticmethod
-    def validate_mode_change(current_state, target_state):
-        if current_state == SatStates.TRANSITION:
-            return False
-        if target_state == SatStates.DEPLOYMENT:
-            return False
-        return True
-
     @staticmethod
     def format_sim_duration(duration):
         total_seconds = int(duration.total_seconds())
@@ -121,3 +113,61 @@ class Helpers:
                 options.append((to_target, to_target_abs_sq))
 
         return options
+
+    @staticmethod
+    def calculate_absolute_velocity(velocity):
+        return math.sqrt(velocity[0] ** 2 + velocity[1] ** 2)
+
+    @staticmethod
+    def is_pos_in_bounds(position):
+        return 0 <= position[0] < MAP_WIDTH and 0 <= position[1] < MAP_HEIGHT
+
+    @staticmethod
+    def compute_vel_magnitude(v):
+        return math.sqrt(v[0] ** 2 + v[1] ** 2)
+
+    @staticmethod
+    def angle_between(v1, v2):
+        dot = v1[0] * v2[0] + v1[1] * v2[1]
+        mag1 = Helpers.compute_vel_magnitude(v1)
+        mag2 = Helpers.compute_vel_magnitude(v2)
+        cos_theta = dot / (mag1 * mag2)
+        cos_theta = max(min(cos_theta, 1), -1)  # Clamp for safety
+        angle_rad = math.acos(cos_theta)
+        return math.degrees(angle_rad)
+
+    @staticmethod
+    def compute_acceleration_limits(dvx, dvy):
+        ax = pow(ACC_CONST, 2) / math.sqrt(1 + (dvy / dvx) ** 2) if dvx != 0 else 0
+        ay = pow(ACC_CONST, 2) / math.sqrt(1 + (dvx / dvy) ** 2) if dvy != 0 else 0
+        return ax, ay
+
+    @staticmethod
+    def validate_velocity_change(old_v, target_v):
+        plan = []
+        current_v = list(old_v)
+
+        while True:
+            dvx = target_v[0] - current_v[0]
+            dvy = target_v[1] - current_v[1]
+
+            if abs(dvx) < 1e-3 and abs(dvy) < 1e-3:
+                break  # Target reached
+
+            ax, ay = Helpers.compute_acceleration_limits(dvx, dvy)
+
+            step_vx = current_v[0] + max(min(dvx, ax * SIM_STEP_DUR), -ax * SIM_STEP_DUR)
+            step_vy = current_v[1] + max(min(dvy, ay * SIM_STEP_DUR), -ay * SIM_STEP_DUR)
+
+            angle = Helpers.angle_between(current_v, [step_vx, step_vy])
+            if angle >= MAX_ALLOWED_VEL_ANGLE:
+                return False, "Angle constraint violated during velocity ramp."
+
+            abs_speed = Helpers.compute_vel_magnitude([step_vx, step_vy])
+            if not (MIN_ALLOWED_VEL <= abs_speed <= MAX_ALLOWED_VEL):
+                return False, f"Velocity magnitude {abs_speed:.2f} out of bounds during ramp."
+
+            current_v = [step_vx, step_vy]
+            plan.append(tuple(current_v))
+
+        return True, plan
