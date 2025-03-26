@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Optional
 
 from PIL.Image import Image
+from datetime import datetime, timezone
 
 from src.app.sim_clock import sim_clock
 from src.app.models.obj_beacon import BeaconObjective
@@ -17,7 +18,7 @@ class ObjManager:
         self.zoned_list = []
 
     def get_all_objectives(self):
-        now = sim_clock.get_time()
+        now = sim_clock.get_time().replace(tzinfo=timezone.utc)
         return {
             "zoned_objectives": [z.info_to_endpoint() for z in self.zoned_list],
             "beacon_objectives": [b.info_to_endpoint() for b in self.beacon_list]
@@ -52,11 +53,14 @@ class ObjManager:
         return new_beacons
 
     def create_beacon_from_dict(self, beacon_dict):
+        start = datetime.fromisoformat(beacon_dict["start"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(beacon_dict["end"].replace("Z", "+00:00"))
+
         new_beac = BeaconObjective(
             id=beacon_dict["id"],
             name=beacon_dict["name"],
-            start=datetime.fromisoformat(beacon_dict["start"]),
-            end=datetime.fromisoformat(beacon_dict["end"]),
+            start=start,
+            end=end,
             decrease_rate=beacon_dict["decrease_rate"],
             attempts_made=beacon_dict["attempts_made"],
             description=beacon_dict["description"],
@@ -68,11 +72,14 @@ class ObjManager:
         return new_beac
 
     def create_zoned_from_dict(self, zoned_dict):
+        start = datetime.fromisoformat(zoned_dict["start"].replace("Z", "+00:00"))
+        end = datetime.fromisoformat(zoned_dict["end"].replace("Z", "+00:00"))
+
         new_zoned = ZonedObjective(
             id=zoned_dict["id"],
             name=zoned_dict["name"],
-            start=datetime.fromisoformat(zoned_dict["start"]),
-            end=datetime.fromisoformat(zoned_dict["end"]),
+            start=start,
+            end=end,
             decrease_rate=zoned_dict["decrease_rate"],
             zone=zoned_dict["zone"],
             optic_required=zoned_dict["optic_required"],

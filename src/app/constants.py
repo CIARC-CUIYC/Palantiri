@@ -21,6 +21,9 @@ TRANSITION_TIME_STANDARD = 3 * 60
 TRANSITION_TIME_FROM_SAFE = 20 * 60
 TRANSITION_TIME_TO_SAFE = 1 * 60
 
+BEACON_MAX_DETECT_RANGE = 2000
+BEACON_GUESS_TOLERANCE = 75
+
 
 class SatStates(Enum):
     DEPLOYMENT = "deployment"
@@ -31,6 +34,7 @@ class SatStates(Enum):
     TRANSITION = "transition"
 
 
+# TODO: Check correct values
 class StateBatteryRate(Enum):
     DEPLOYMENT = -0.025
     ACQUISITION = -0.2

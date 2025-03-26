@@ -11,6 +11,7 @@ def objective():
     return jsonify(obj_manager.get_all_objectives())
 
 
+# TODO: Document the required formatting for the PUT command
 @bp.route('/', methods=['PUT'])
 def add_objectives():
     data = request.get_json()
@@ -57,6 +58,7 @@ def add_objectives():
 
     return jsonify(responses), 201
 
+
 @bp.route('/', methods=['DELETE'])
 def delete_objective():
     obj_id = request.args.get('id', type=int)
@@ -70,4 +72,3 @@ def delete_objective():
         return jsonify({"message": f"Objective with ID {obj_id} deleted."})
     else:
         return jsonify({"message": f"Objective with ID {obj_id} not found."}), 404
-
