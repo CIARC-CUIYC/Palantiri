@@ -76,7 +76,7 @@ PADDING = 600
 def load_map_image() -> Image:
     img = cairo.ImageSurface(cairo.FORMAT_ARGB32, MAP_WIDTH, MAP_HEIGHT)
     ctx = cairo.Context(img)
-    handle = Handle("test_image.svg")
+    handle = Handle("../test_image.svg")
     handle.render_cairo(ctx)
 
     with tempfile.NamedTemporaryFile(suffix=".png") as f:
