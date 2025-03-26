@@ -46,15 +46,15 @@ class Melvin:
             self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
 
             if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
-                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}s")
+                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}")
 
     def update_pos(self):
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
         self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
         # TODO: Consider check instaed of doing this every time
-        Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
-        Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
+        self.pos[0] = Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
+        self.pos[1] = Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
 
     def update_battery(self):
         self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
