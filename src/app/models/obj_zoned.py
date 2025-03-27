@@ -6,7 +6,7 @@ from ..helpers import Helpers
 
 from PIL import Image
 
-from src.app.constants import MAP_WIDTH, MAP_HEIGHT, CameraAngle
+from ...app.constants import MAP_WIDTH, MAP_HEIGHT, CameraAngle
 from ..image_loader import get_obj_img, PADDING
 
 ZONED__DESCRIPTIONS = [

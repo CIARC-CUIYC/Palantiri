@@ -1,5 +1,5 @@
-from src.app import create_app
-from src.app.image_loader import load_map_image
+from .app import create_app
+from .app.image_loader import load_map_image
 
 load_map_image()
 

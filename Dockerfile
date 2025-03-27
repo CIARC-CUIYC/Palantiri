@@ -1,6 +1,6 @@
 FROM python:3.11
 
-WORKDIR /app
+WORKDIR /sil
 
 # Copy and install dependencies
 COPY requirements.txt .
@@ -12,5 +12,5 @@ COPY ./src ./src
 
 # Expose the SIL API port
 EXPOSE 5000
-
-CMD ["python", "./src/app/main.py"]
+ENV PYTHONPATH=/sil/src
+CMD ["python", "/sil/src/__main__.py"]

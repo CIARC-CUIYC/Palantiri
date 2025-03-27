@@ -4,10 +4,10 @@ from typing import Optional
 from PIL.Image import Image
 from datetime import datetime, timezone
 
-from src.app.image_loader import apply_map_overlay, remove_map_overlay
-from src.app.sim_clock import sim_clock
-from src.app.models.obj_beacon import BeaconObjective
-from src.app.models.obj_zoned import ZonedObjective
+from ...app.image_loader import apply_map_overlay, remove_map_overlay
+from ...app.sim_clock import sim_clock
+from ...app.models.obj_beacon import BeaconObjective
+from ...app.models.obj_zoned import ZonedObjective
 
 
 class ObjManager:

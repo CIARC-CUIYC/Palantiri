@@ -2,7 +2,7 @@ import math
 import random
 import numpy as np
 from typing import List
-from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
+from ..app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
     TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST, MAX_ALLOWED_VEL_ANGLE, \
     MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SIM_STEP_DUR
 

@@ -4,8 +4,8 @@ import threading
 from collections import OrderedDict
 from datetime import timedelta
 
-from src.app.constants import *
-from src.app.helpers import Helpers
+from ...app.constants import *
+from ...app.helpers import Helpers
 
 logging.basicConfig(
     level=logging.DEBUG,

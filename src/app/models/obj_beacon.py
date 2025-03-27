@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
 from time import timezone
 
-from src.app.constants import MAP_HEIGHT, MAP_WIDTH
+from ...app.constants import MAP_HEIGHT, MAP_WIDTH
 
 
 @dataclass

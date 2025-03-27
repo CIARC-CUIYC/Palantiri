@@ -5,7 +5,7 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = 933120000
 
-from src.app.constants import MAP_HEIGHT, MAP_WIDTH
+from ..app.constants import MAP_HEIGHT, MAP_WIDTH
 
 from ctypes import CDLL, POINTER, Structure, byref, util
 from ctypes import c_bool, c_byte, c_void_p, c_int, c_double, c_uint32, c_char_p
