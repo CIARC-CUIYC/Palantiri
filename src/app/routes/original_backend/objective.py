@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, request, jsonify
 from werkzeug.exceptions import BadRequest
 
@@ -5,6 +7,19 @@ from src.app.models.obj_manager import obj_manager
 
 bp = Blueprint('objective', __name__)
 
+
+@bp.before_request
+def objective_mute_log():
+    if request.method == 'GET':
+        werkzeug_logger = logging.getLogger('werkzeug')
+        werkzeug_logger.setLevel(logging.ERROR)
+
+
+@bp.after_request
+def objective_unmute_log():
+    if request.method == 'GET':
+        werkzeug_logger = logging.getLogger('werkzeug')
+        werkzeug_logger.setLevel(logging.INFO)
 
 @bp.route('/objective', methods=['GET'])
 def objective():
@@ -22,7 +37,7 @@ The expected JSON body for this endpoint is:
 """
 
 
-@bp.route('/', methods=['PUT'])
+@bp.route('/objective', methods=['PUT'])
 def add_objectives():
     data = request.get_json()
     if not data:

@@ -37,11 +37,11 @@ class Melvin:
 
     def next_sim_step(self):
         self.check_for_transition()
-        self.update_pos()
-        self.update_battery()
-
         if self.transition_time:
             self.handle_transition_time()
+
+        self.update_pos()
+        self.update_battery()
 
         if self.vel_plan:
             self.update_velocity()
@@ -83,7 +83,7 @@ class Melvin:
             self.vel_plan = []
             self.transition_time = Helpers.get_transition_time(self.melvin_state, self.state_target)
             self.logger.info(
-                f"Melvin state changed to {self.melvin_state.name}. Next state is {self.state_target.name} in {self.transition_time}s.")
+                f"Melvin state chang started to {self.melvin_state.name}. Transition is {self.transition_time}s.")
 
     def get_observation(self):
         return OrderedDict({
@@ -122,10 +122,9 @@ class Melvin:
             self.state_target = SatStates(state)
             self.logger.info(f"Melvin target state changed to {state}")
 
-    # TODO: Remove unnecessary double checks
     def update_control(self, vel_x, vel_y, camera_angle):
-        if self.melvin_state == SatStates.ACQUISITION:
-            self.camera_angle = CameraAngle(camera_angle)
+        self.camera_angle = CameraAngle(camera_angle)
+        if self.vel[0] != vel_x or self.vel[1] != vel_y:
             self.set_target_velocity([vel_x, vel_y])
 
     def set_target_velocity(self, target_vel):

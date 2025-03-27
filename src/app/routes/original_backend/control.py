@@ -1,3 +1,5 @@
+import logging
+
 from flask import Blueprint, request, jsonify
 
 from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates, CameraAngle, MAX_ALLOWED_VEL_ANGLE
@@ -19,9 +21,9 @@ def control():
         if not all(field in data for field in required_fields):
             raise BadRequest("Missing required control fields.")
 
-        safe_mode_block = (melvin.melvin_state == SatStates.SAFE and melvin.bat < 10.0)
+        safe_mode_block = (melvin.melvin_state is SatStates.SAFE and melvin.bat < 10.0)
 
-        if melvin.melvin_state != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
+        if melvin.melvin_state.value != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
             try:
                 ControlValidation.validate_input_state(data["state"])
                 melvin.update_state(state=data["state"])
@@ -33,13 +35,16 @@ def control():
         try:
             ControlValidation.validate_input_angle(data["camera_angle"])
             ControlValidation.validate_input_velocity([data["vel_x"], data["vel_y"]])
-
+            assert(type(data["vel_x"]) == float and type(data["vel_y"]) == float)
             if melvin.melvin_state == SatStates.ACQUISITION:
                 melvin.update_control(
                     vel_x=data["vel_x"],
                     vel_y=data["vel_y"],
                     camera_angle=data["camera_angle"],
                 )
+            else:
+                logger = logging.getLogger(__name__)
+                logger.warning("Cant change velocity and angle when not in acquisition")
 
             response["status"] = "Control values updated successfully."
             response["vel_x"] = melvin.vel[0]
