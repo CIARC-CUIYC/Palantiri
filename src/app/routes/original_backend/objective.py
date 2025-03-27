@@ -3,10 +3,10 @@ from werkzeug.exceptions import BadRequest
 
 from src.app.models.obj_manager import obj_manager
 
-bp = Blueprint('objective', __name__, url_prefix='/objective')
+bp = Blueprint('objective', __name__)
 
 
-@bp.route('/', methods=['GET'])
+@bp.route('/objective', methods=['GET'])
 def objective():
     return jsonify(obj_manager.get_all_objectives())
 

@@ -5,13 +5,13 @@ from src.app.constants import BEACON_GUESS_TOLERANCE, MAP_HEIGHT, MAP_WIDTH
 from src.app.helpers import Helpers
 from src.app.models.obj_manager import obj_manager
 
-bp = Blueprint('beacon', __name__, url_prefix='/beacon')
+bp = Blueprint('beacon', __name__)
 
 # Store guess counts
 beacon_guess_tracker = {}  # beacon_id -> int
 
 
-@bp.route('/', methods=['PUT'])
+@bp.route('/beacon', methods=['PUT'])
 def guess_beacon():
     data = request.get_json(silent=True) or {}
 
@@ -49,10 +49,9 @@ def guess_beacon():
     if guess_beac_distance <= BEACON_GUESS_TOLERANCE:
         obj_manager.obj_list.remove(beacon)
         obj_manager.beacon_list.remove(beacon)
-        return jsonify({"result": "success", "guess_beac_distance": guess_beac_distance,
-                        "guesses_used": beacon_guess_tracker[beacon_id]})
+        return jsonify({"status": "success", "attempts_made": beacon_guess_tracker[beacon_id]})
     else:
-        return jsonify({"result": "failure", "guesses_used": beacon_guess_tracker[beacon_id]})
+        return jsonify({"status": "failure", "attempts_made": beacon_guess_tracker[beacon_id]})
 
 
 class BeaconValidation:

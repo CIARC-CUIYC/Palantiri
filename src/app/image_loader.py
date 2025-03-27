@@ -5,7 +5,7 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = 933120000
 
-from ..app.constants import MAP_HEIGHT, MAP_WIDTH
+from src.app.constants import MAP_HEIGHT, MAP_WIDTH
 
 from ctypes import CDLL, POINTER, Structure, byref, util
 from ctypes import c_bool, c_byte, c_void_p, c_int, c_double, c_uint32, c_char_p
@@ -76,7 +76,7 @@ PADDING = 600
 def load_map_image() -> Image:
     img = cairo.ImageSurface(cairo.FORMAT_ARGB32, MAP_WIDTH, MAP_HEIGHT)
     ctx = cairo.Context(img)
-    handle = Handle("test_image.svg")
+    handle = Handle("assets/test_image.svg")
     handle.render_cairo(ctx)
 
     with tempfile.NamedTemporaryFile(suffix=".png") as f:
@@ -112,7 +112,7 @@ def load_map_image() -> Image:
 
 def_map_image = load_map_image()
 current_map_image = def_map_image.copy()
-obj_image = Image.open("obj_img.png").convert("RGBA")
+obj_image = Image.open("assets/obj_img.png").convert("RGBA")
 
 
 def get_obj_img() -> Image.Image:

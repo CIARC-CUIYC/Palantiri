@@ -1,13 +1,12 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from PIL import Image, ImageChops
 import logging
 
 from src.app.models.obj_manager import obj_manager
+from src.app.routes.original_backend.get_image import bp
 
-bp = Blueprint('image', __name__, url_prefix='/image')
 
-
-@bp.route('/', methods=['POST'])
+@bp.route('/image', methods=['POST'])
 def submit_img_obj():
     try:
         obj_id = int(request.args.get('objective_id'))
@@ -25,6 +24,6 @@ def submit_img_obj():
         obj_manager.delete_objective_by_id(obj_id)
         logger = logging.getLogger(__name__)
         logger.info(f"Objective {obj_id} submitted. Mean difference: {mean_diff}")
-        return "received objective", 200
+        return jsonify("received objective"), 200
     except Exception as e:
         return {"error": f"An error occurred: {str(e)}"}, 500

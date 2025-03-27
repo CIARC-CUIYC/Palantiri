@@ -2,18 +2,17 @@ import time
 from datetime import timezone
 from flask import Blueprint, Response
 
-from ....app.constants import BEACON_MAX_DETECT_RANGE, SatStates
-from ....app.models.melvin import melvin
-from ....app.models.obj_manager import obj_manager
-from ....app.sim_clock import sim_clock
+from src.app.constants import BEACON_MAX_DETECT_RANGE, SatStates
+from src.app.helpers import Helpers
+from src.app.models.melvin import melvin
+from src.app.models.obj_manager import obj_manager
+from src.app.sim_clock import sim_clock
 
-from ....app.helpers import Helpers
-
-bp = Blueprint('announcements', __name__, url_prefix='/announcements')
+bp = Blueprint('announcements', __name__)
 
 
 # --- SSE Ping Endpoint ---
-@bp.route('/', methods=['GET'])
+@bp.route('/announcements', methods=['GET'])
 def stream_beacon_pings():
     def event_stream():
         print("[INFO] Event stream started!")

@@ -14,9 +14,11 @@ MIN_ALLOWED_VEL = 3.0
 MAX_ALLOWED_VEL = 71.0
 MAX_ALLOWED_VEL_ANGLE = 170
 
-ACC_CONST = 0.04
+ACC_CONST = 0.01
 
-FUEL_COST = 0.03
+FUEL_COST = 0.015
+ADD_BAT_COST = -0.025
+
 
 START_BAT = 100.0
 START_FUEL = 100.0
@@ -43,15 +45,13 @@ class SatStates(Enum):
     def is_valid_sat_state(input_state):
         return input_state in {state.value for state in SatStates}
 
-
-# TODO: Check correct values
 class StateBatteryRate(Enum):
     DEPLOYMENT = -0.025
-    ACQUISITION = -0.2
-    CHARGE = 0.2
+    ACQUISITION = -0.05
+    CHARGE = 0.05
     TRANSITION = 0
-    SAFE = 0.05
-    COMMS = -0.016
+    SAFE = 0.0125
+    COMMS = -0.004
 
 
 class CameraAngle(Enum):

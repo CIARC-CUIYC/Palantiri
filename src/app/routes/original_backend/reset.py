@@ -1,9 +1,9 @@
 from flask import Blueprint, jsonify
 from src.app.models.melvin import melvin
 
-bp = Blueprint('reset', __name__, url_prefix='/reset')
+bp = Blueprint('reset', __name__)
 
-@bp.route('/', methods=['GET'])
+@bp.route('/reset', methods=['GET'])
 def reset():
     melvin.reset()
-    return jsonify({"message": "Melvin has been reset."})
+    return jsonify("Reset the engine successfully."), 200

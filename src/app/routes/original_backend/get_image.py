@@ -3,13 +3,13 @@ from src.app.image_loader import get_map_chunk
 from src.app.models.melvin import melvin
 import io
 
-bp = Blueprint('image', __name__, url_prefix='/image')
+bp = Blueprint('image', __name__)
 
 
-@bp.route('/', methods=['GET'])
+@bp.route('/image', methods=['GET'])
 def get_image():
     try:
-        melvin_pos = melvin.pos
+        melvin_pos = (round(melvin.pos[0]), round(melvin.pos[1]))
         angle = melvin.camera_angle
         # TODO: implement image access
         img = get_map_chunk(melvin_pos, angle.get_side_length())

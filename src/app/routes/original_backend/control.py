@@ -5,25 +5,25 @@ from src.app.helpers import Helpers
 from src.app.models.melvin import melvin
 from werkzeug.exceptions import BadRequest
 
-bp = Blueprint('control', __name__, url_prefix='/control')
+bp = Blueprint('control', __name__)
 
 
-@bp.route('/', methods=['PUT'])
+@bp.route('/control', methods=['PUT'])
 def control():
     try:
         data = request.get_json()
-        response = {"message": ""}
+        response = {}
         status_code = 200
 
         required_fields = ["vel_x", "vel_y", "camera_angle", "state"]
         if not all(field in data for field in required_fields):
             raise BadRequest("Missing required control fields.")
 
-        if melvin.melvin_state != data["state"]:
+        if melvin.melvin_state != data["state"] and melvin.state_target != data["state"]:
             try:
                 ControlValidation.validate_input_state(data["state"])
                 melvin.update_state(state=data["state"])
-                response["message"] += "Target state updated successfully."
+                response["status"] = "Target state updated successfully."
             except BadRequest as e:
                 response["error"] = str(e)
                 status_code = 400
@@ -32,12 +32,18 @@ def control():
             ControlValidation.validate_input_angle(data["camera_angle"])
             ControlValidation.validate_input_velocity([data["vel_x"], data["vel_y"]])
 
-            melvin.update_control(
-                vel_x=data["vel_x"],
-                vel_y=data["vel_y"],
-                camera_angle=data["camera_angle"],
-            )
-            response["message"] += "Control values updated successfully."
+            if melvin.melvin_state == SatStates.ACQUISITION:
+                melvin.update_control(
+                    vel_x=data["vel_x"],
+                    vel_y=data["vel_y"],
+                    camera_angle=data["camera_angle"],
+                )
+
+            response["status"] = "Control values updated successfully."
+            response["vel_x"] = melvin.vel[0]
+            response["vel_y"] = melvin.vel[1]
+            response["camera_angle"] = melvin.camera_angle.value
+            response["state"] = melvin.melvin_state.value
         except BadRequest as e:
             response["error"] = str(e)
             status_code = 400
@@ -70,22 +76,13 @@ class ControlValidation:
         if not CameraAngle.is_valid_camera_angle(input_angle):
             raise BadRequest("Invalid camera angle.")
 
-    if melvin.melvin_state != SatStates.ACQUISITION and melvin.melvin_state != SatStates.DEPLOYMENT:
-        raise BadRequest("Camera angle can only be set during acquisition.")
-
     @staticmethod
     def validate_input_velocity(input_vel):
         if input_vel[0] == melvin.vel[0] and input_vel[1] == melvin.vel[1]:
             return
-
-        if input_vel[0] < 0 or input_vel[1] < 0:
-            raise BadRequest("Velocity must be positive.")
 
         if MIN_ALLOWED_VEL > Helpers.calculate_absolute_velocity(
                 [input_vel[0], input_vel[1]]) or MAX_ALLOWED_VEL < Helpers.calculate_absolute_velocity(
             [input_vel[0], input_vel[1]]):
             raise BadRequest(
                 f"Velocity out of bounds. Absolute velocity must be between {MIN_ALLOWED_VEL} and {MAX_ALLOWED_VEL}.")
-
-        if melvin.melvin_state != SatStates.ACQUISITION:
-            raise BadRequest("Velocity can only be set during acquisition.")

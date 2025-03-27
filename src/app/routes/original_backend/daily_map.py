@@ -1,14 +1,14 @@
 import logging
 
-from flask import Blueprint, request
+from flask import Blueprint, request, jsonify
 from PIL import Image, ImageChops
 
 from src.app.image_loader import get_full_map
 
-bp = Blueprint('dailyMap', __name__, url_prefix='/dailyMap')
+bp = Blueprint('dailyMap', __name__)
 
 
-@bp.route('/', methods=['POST'])
+@bp.route('/dailyMap', methods=['POST'])
 def upload_daily_map():
     try:
         uploaded_file = request.files.get('image')
@@ -25,7 +25,7 @@ def upload_daily_map():
         logger = logging.getLogger(__name__)
         logger.info(f"Daily Map submitted. Mean difference: {mean_diff}")
 
-        return "upload successful", 200
+        return jsonify("upload successful"), 200
     except Exception as e:
         return {"error": f"An error occurred: {str(e)}"}, 500
 

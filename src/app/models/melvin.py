@@ -2,10 +2,10 @@ import time
 import logging
 import threading
 from collections import OrderedDict
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
-from ...app.constants import *
-from ...app.helpers import Helpers
+from src.app.constants import *
+from src.app.helpers import Helpers
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -38,6 +38,7 @@ class Melvin:
 
     def next_sim_step(self):
         with self._lock:
+            self.check_for_transition()
             self.update_pos()
             self.update_battery()
 
@@ -48,7 +49,6 @@ class Melvin:
                 self.update_velocity()
                 self.fuel -= FUEL_COST
 
-            self.check_for_transition()
             self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
 
             if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
@@ -58,20 +58,17 @@ class Melvin:
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
         self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
-        # TODO: Consider check instead of doing this every time
         self.pos[0] = Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
         self.pos[1] = Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
 
     def update_battery(self):
+        if self.vel_plan:
+            self.bat += ADD_BAT_COST
         self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
         self.bat = Helpers.clamp(self.bat, 0, 100)
         if self.bat <= 0 and self.state_target != SatStates.SAFE:
             self.state_target = SatStates.SAFE
             self.logger.info("Melvin battery empty. Forced transition to safe mode.")
-
-    def update_vel_and_fuel(self):
-        # TODO
-        pass
 
     def handle_transition_time(self):
         self.transition_time = max(0, self.transition_time - SIM_STEP_DUR)
@@ -84,6 +81,7 @@ class Melvin:
     def check_for_transition(self):
         if self.melvin_state != self.state_target and self.state_target is not None and self.melvin_state != SatStates.TRANSITION:
             self.melvin_state = SatStates.TRANSITION
+            self.vel_plan = []
             self.transition_time = Helpers.get_transition_time(self.melvin_state, self.state_target)
             self.logger.info(
                 f"Melvin state changed to {self.melvin_state.name}. Next state is {self.state_target.name} in {self.transition_time}s.")
@@ -93,12 +91,23 @@ class Melvin:
             return OrderedDict({
                 "state": self.melvin_state.value,
                 "angle": self.camera_angle.value,
-                "width_x": round(self.pos[0]),
-                "height_y": round(self.pos[1]),
+                "simulation_speed": 1,
+                "width_x": int(round(self.pos[0])),
+                "height_y": int(round(self.pos[1])),
                 "vx": round(self.vel[0], 2),
                 "vy": round(self.vel[1], 2),
                 "battery": round(self.bat, 2),
-                "fuel": round(self.fuel, 2)
+                "max_battery": 100.0,
+                "fuel": round(self.fuel, 2),
+                "distance_covered": 1.0,
+                "area_covered": {"narrow": 0.0, "normal": 0.0, "wide": 0.0},
+                "data_volume": {"data_volume_sent": 0, "data_volume_received": 0},
+                "images_taken": 0,
+                "active_time": 0.0,
+                "objectives_done": 0,
+                "objectives_points": 0,
+                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
             })
 
     def reset(self):
@@ -138,9 +147,6 @@ class Melvin:
     def update_velocity(self):
         next_v = self.vel_plan.pop(0)
         self.vel = list(next_v)
-
-        if not self.vel_plan:
-            self.vel_plan = None
 
 
 melvin = Melvin()

@@ -1,6 +1,6 @@
 from flask import Flask
-from ..app.routes.helper_backend import palantiri
-from ..app.routes.original_backend import control, objective, observation, reset, announcements, beacon
+from src.app.routes.helper_backend import palantiri
+from src.app.routes.original_backend import control, objective, observation, reset, announcements, beacon
 
 
 def create_app():
