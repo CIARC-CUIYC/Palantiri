@@ -62,7 +62,7 @@ class Handle(object):
     def get_dimension_data(self):
         svgDim = self.RsvgDimensionData()
         _librsvg.rsvg_handle_get_dimensions(self.handle, byref(svgDim))
-        return (svgDim.width, svgDim.height)
+        return svgDim.width, svgDim.height
 
     def render_cairo(self, ctx):
         """Returns True is drawing succeeded."""

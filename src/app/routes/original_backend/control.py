@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates, CameraAngle
+from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates, CameraAngle, MAX_ALLOWED_VEL_ANGLE
 from src.app.helpers import Helpers
 from src.app.models.melvin import melvin
 from werkzeug.exceptions import BadRequest
@@ -19,7 +19,9 @@ def control():
         if not all(field in data for field in required_fields):
             raise BadRequest("Missing required control fields.")
 
-        if melvin.melvin_state != data["state"] and melvin.state_target != data["state"]:
+        safe_mode_block = (melvin.melvin_state == SatStates.SAFE and melvin.bat < 10.0)
+
+        if melvin.melvin_state != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
             try:
                 ControlValidation.validate_input_state(data["state"])
                 melvin.update_state(state=data["state"])
@@ -81,8 +83,13 @@ class ControlValidation:
         if input_vel[0] == melvin.vel[0] and input_vel[1] == melvin.vel[1]:
             return
 
-        if MIN_ALLOWED_VEL > Helpers.calculate_absolute_velocity(
-                [input_vel[0], input_vel[1]]) or MAX_ALLOWED_VEL < Helpers.calculate_absolute_velocity(
+        angle = Helpers.angle_between(melvin.vel, input_vel)
+        if angle >= MAX_ALLOWED_VEL_ANGLE:
+            raise BadRequest(
+                f"Velocity out of bounds. Angle between new and old velocity must be less than {MAX_ALLOWED_VEL_ANGLE} degrees.")
+
+        if MIN_ALLOWED_VEL > Helpers.compute_vel_magnitude(
+                [input_vel[0], input_vel[1]]) or MAX_ALLOWED_VEL < Helpers.compute_vel_magnitude(
             [input_vel[0], input_vel[1]]):
             raise BadRequest(
                 f"Velocity out of bounds. Absolute velocity must be between {MIN_ALLOWED_VEL} and {MAX_ALLOWED_VEL}.")

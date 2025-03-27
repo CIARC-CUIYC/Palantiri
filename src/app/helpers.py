@@ -3,8 +3,7 @@ import random
 import numpy as np
 from typing import List
 from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
-    TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST, MAX_ALLOWED_VEL_ANGLE, \
-    MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SIM_STEP_DUR
+    TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST, SIM_STEP_DUR
 
 
 class Helpers:
@@ -113,10 +112,6 @@ class Helpers:
         return options
 
     @staticmethod
-    def calculate_absolute_velocity(velocity):
-        return math.sqrt(velocity[0] ** 2 + velocity[1] ** 2)
-
-    @staticmethod
     def is_pos_in_bounds(position):
         return 0 <= position[0] < MAP_WIDTH and 0 <= position[1] < MAP_HEIGHT
 
@@ -154,18 +149,10 @@ class Helpers:
 
             ax, ay = Helpers.compute_acceleration_limits(dvx, dvy)
 
-            step_vx = current_v[0] + max(min(dvx, ax * SIM_STEP_DUR), -ax * SIM_STEP_DUR)
-            step_vy = current_v[1] + max(min(dvy, ay * SIM_STEP_DUR), -ay * SIM_STEP_DUR)
-
-            angle = Helpers.angle_between(current_v, [step_vx, step_vy])
-            if angle >= MAX_ALLOWED_VEL_ANGLE:
-                return False, "Angle constraint violated during velocity ramp."
-
-            abs_speed = Helpers.compute_vel_magnitude([step_vx, step_vy])
-            if not (MIN_ALLOWED_VEL <= abs_speed <= MAX_ALLOWED_VEL):
-                return False, f"Velocity magnitude {abs_speed:.2f} out of bounds during ramp."
+            step_vx = current_v[0] + ax * SIM_STEP_DUR
+            step_vy = current_v[1] + ay * SIM_STEP_DUR
 
             current_v = [step_vx, step_vy]
             plan.append(tuple(current_v))
 
-        return True, plan
+        return plan

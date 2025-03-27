@@ -30,29 +30,27 @@ class Melvin:
 
         self.vel_plan = None
 
-        self._lock = threading.Lock()
         self.logger = logging.getLogger(self.__class__.__name__)
         self.sim_duration = timedelta(seconds=0)
 
         self.logger.info("Melvin initialized. Default start values set.")
 
     def next_sim_step(self):
-        with self._lock:
-            self.check_for_transition()
-            self.update_pos()
-            self.update_battery()
+        self.check_for_transition()
+        self.update_pos()
+        self.update_battery()
 
-            if self.transition_time:
-                self.handle_transition_time()
+        if self.transition_time:
+            self.handle_transition_time()
 
-            if self.vel_plan:
-                self.update_velocity()
-                self.fuel -= FUEL_COST
+        if self.vel_plan:
+            self.update_velocity()
+            self.fuel -= FUEL_COST
 
-            self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
+        self.sim_duration += timedelta(seconds=SIM_STEP_DUR)
 
-            if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
-                self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}")
+        if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
+            self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}")
 
     def update_pos(self):
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
@@ -76,6 +74,7 @@ class Melvin:
         if self.transition_time == 0:
             self.transition_time = None
             self.melvin_state = self.state_target
+            self.state_target = None
             self.logger.info(f"Melvin state changed to {self.melvin_state.name}")
 
     def check_for_transition(self):
@@ -87,60 +86,50 @@ class Melvin:
                 f"Melvin state changed to {self.melvin_state.name}. Next state is {self.state_target.name} in {self.transition_time}s.")
 
     def get_observation(self):
-        with self._lock:
-            return OrderedDict({
-                "state": self.melvin_state.value,
-                "angle": self.camera_angle.value,
-                "simulation_speed": 1,
-                "width_x": int(round(self.pos[0])),
-                "height_y": int(round(self.pos[1])),
-                "vx": round(self.vel[0], 2),
-                "vy": round(self.vel[1], 2),
-                "battery": round(self.bat, 2),
-                "max_battery": 100.0,
-                "fuel": round(self.fuel, 2),
-                "distance_covered": 1.0,
-                "area_covered": {"narrow": 0.0, "normal": 0.0, "wide": 0.0},
-                "data_volume": {"data_volume_sent": 0, "data_volume_received": 0},
-                "images_taken": 0,
-                "active_time": 0.0,
-                "objectives_done": 0,
-                "objectives_points": 0,
-                "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        return OrderedDict({
+            "state": self.melvin_state.value,
+            "angle": self.camera_angle.value,
+            "simulation_speed": 1,
+            "width_x": int(round(self.pos[0])),
+            "height_y": int(round(self.pos[1])),
+            "vx": round(self.vel[0], 2),
+            "vy": round(self.vel[1], 2),
+            "battery": round(self.bat, 2),
+            "max_battery": 100.0,
+            "fuel": round(self.fuel, 2),
+            "distance_covered": 1.0,
+            "area_covered": {"narrow": 0.0, "normal": 0.0, "wide": 0.0},
+            "data_volume": {"data_volume_sent": 0, "data_volume_received": 0},
+            "images_taken": 0,
+            "active_time": 0.0,
+            "objectives_done": 0,
+            "objectives_points": 0,
+            "timestamp": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
-            })
+        })
 
     def reset(self):
-        with self._lock:
-            self.pos = START_POS.copy()
-            self.vel = START_VEL.copy()
-            self.bat = START_BAT
-            self.fuel = START_FUEL
-            self.melvin_state = SatStates.DEPLOYMENT
-            self.camera_angle = CameraAngle.NORMAL
-            self.logger.info("Melvin reset.")
+        self.pos = START_POS.copy()
+        self.vel = START_VEL.copy()
+        self.bat = START_BAT
+        self.fuel = START_FUEL
+        self.melvin_state = SatStates.DEPLOYMENT
+        self.camera_angle = CameraAngle.NORMAL
+        self.logger.info("Melvin reset.")
 
     def update_state(self, state):
-        with self._lock:
-            if self.melvin_state != SatStates.TRANSITION:
-                self.state_target = SatStates(state)
-                self.logger.info(f"Melvin target state changed to {state}")
+        if self.melvin_state != SatStates.TRANSITION:
+            self.state_target = SatStates(state)
+            self.logger.info(f"Melvin target state changed to {state}")
 
     # TODO: Remove unnecessary double checks
     def update_control(self, vel_x, vel_y, camera_angle):
-        with self._lock:
-            if self.melvin_state == SatStates.ACQUISITION:
-                self.camera_angle = CameraAngle(camera_angle)
-                self.set_target_velocity([vel_x, vel_y])
+        if self.melvin_state == SatStates.ACQUISITION:
+            self.camera_angle = CameraAngle(camera_angle)
+            self.set_target_velocity([vel_x, vel_y])
 
     def set_target_velocity(self, target_vel):
-        ok, result = Helpers.validate_velocity_change(self.vel, target_vel)
-
-        if not ok:
-            print(f"[Melvin] Velocity change rejected: {result}")
-            return False
-
-        self.vel_plan = result  # list of (vx, vy) steps
+        self.vel_plan = Helpers.validate_velocity_change(self.vel, target_vel)  # list of (vx, vy) steps
         print(f"[Melvin] Velocity plan accepted: {len(self.vel_plan)} steps")
         return True
 
@@ -154,8 +143,9 @@ melvin = Melvin()
 
 def background_updater():
     while True:
+        next_update_time = datetime.now(timezone.utc) + timedelta(seconds=SIM_STEP_DUR)
         melvin.next_sim_step()
-        time.sleep(SIM_STEP_DUR)
+        time.sleep(next_update_time.timestamp() - time.time())
 
 
 threading.Thread(target=background_updater, daemon=True).start()
