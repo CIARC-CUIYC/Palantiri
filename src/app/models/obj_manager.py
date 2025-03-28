@@ -15,7 +15,7 @@ class ObjManager:
 
     def get_all_objectives(self):
         return {
-            "zoned_objectives": [z.info_to_endpoint() for z in self.zoned_list],
+            "img_objectives": [z.info_to_endpoint() for z in self.zoned_list],
             "beacon_objectives": [b.info_to_endpoint() for b in self.beacon_list]
         }
 
