@@ -6,6 +6,7 @@ from datetime import timedelta, datetime, timezone
 
 from src.app.constants import *
 from src.app.helpers import Helpers
+from src.app.models.obj_manager import obj_manager
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -114,7 +115,9 @@ class Melvin:
         self.bat = START_BAT
         self.fuel = START_FUEL
         self.state = SatStates.DEPLOYMENT
+        self.state_target = None
         self.camera_angle = CameraAngle.NORMAL
+        obj_manager.delete_all()
         self.logger.info("Melvin reset.")
 
     def update_state(self, state):

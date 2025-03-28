@@ -1,7 +1,6 @@
 import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
-from time import timezone
 
 from src.app.constants import MAP_HEIGHT, MAP_WIDTH
 
@@ -33,8 +32,8 @@ class BeaconObjective:
 
     @staticmethod
     def create_randomized(rand_beac_id: int):
-        start = datetime.now(timezone.utc) + timedelta(hours=random.randint(1, 3))
-        end = start + timedelta(hours=4)
+        start = datetime.now(timezone.utc) + timedelta(hours=float(random.randint(1, 3)))
+        end = start + timedelta(hours=4.0)
 
         return BeaconObjective(
             id=rand_beac_id,

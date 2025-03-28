@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 import tempfile
 import cairo
@@ -142,7 +143,8 @@ def get_full_map() -> Image:
 
 def apply_map_overlay(overlay: Image) -> None:
     (width, height) = overlay.size
-    if width != MAP_WIDTH or height != MAP_HEIGHT:
+    if width != (MAP_WIDTH + 2 * PADDING) or height != (MAP_HEIGHT + 2 * PADDING):
+        logging.getLogger(__name__).info(f"width: {width}, height: {height}")
         raise ValueError("Overlay must be the same size as the map")
     alpha = overlay.split()[3]
     current_map_image.paste(overlay, (0, 0), mask=alpha)

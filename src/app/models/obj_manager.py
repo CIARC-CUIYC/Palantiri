@@ -1,10 +1,7 @@
+import logging
 import random
-from typing import Optional
-
-from PIL.Image import Image
 from datetime import datetime, timezone
 
-from src.app.image_loader import apply_map_overlay, remove_map_overlay
 from src.app.models.obj_beacon import BeaconObjective
 from src.app.models.obj_zoned import ZonedObjective
 
@@ -12,7 +9,6 @@ from src.app.models.obj_zoned import ZonedObjective
 class ObjManager:
     def __init__(self):
         self.obj_list = []
-        self.obj_img_map = {}
         self.existing_ids = set()
         self.beacon_list = []
         self.zoned_list = []
@@ -34,7 +30,7 @@ class ObjManager:
                     self.obj_list.append(self.zoned_list[-1])
                     self.existing_ids.add(new_zo.id)
                     new_zo_objs.append(self.zoned_list[-1])
-                    apply_map_overlay(new_zo.overlay)
+                    #apply_map_overlay(new_zo.overlay)
                     break
         # TODO: create images for objective
         return new_zo_objs
@@ -46,10 +42,10 @@ class ObjManager:
                 obj_id = random.randint(1, 100)
                 if obj_id not in self.existing_ids:
                     new_bo = BeaconObjective.create_randomized(obj_id)
-                    self.zoned_list.append(new_bo)
-                    self.obj_list.append(self.zoned_list[-1])
+                    self.beacon_list.append(new_bo)
+                    self.obj_list.append(self.beacon_list[-1])
                     self.existing_ids.add(new_bo.id)
-                    new_beacons.append(self.zoned_list[-1])
+                    new_beacons.append(self.beacon_list[-1])
                     break
 
         return new_beacons
@@ -76,7 +72,7 @@ class ObjManager:
     def create_zoned_from_dict(self, zoned_dict):
         start = datetime.fromisoformat(zoned_dict["start"].replace("Z", "+00:00"))
         end = datetime.fromisoformat(zoned_dict["end"].replace("Z", "+00:00"))
-        overlay = ZonedObjective.get_overlay(zoned_dict["zone"])
+        #overlay = ZonedObjective.get_overlay(zoned_dict["zone"])
         new_zoned = ZonedObjective(
             id=zoned_dict["id"],
             name=zoned_dict["name"],
@@ -89,29 +85,31 @@ class ObjManager:
             description=zoned_dict["description"],
             sprite=zoned_dict["sprite"],
             secret=zoned_dict["secret"],
-            overlay=overlay
+            overlay=None
         )
         self.obj_list.append(new_zoned)
         self.zoned_list.append(new_zoned)
-        apply_map_overlay(new_zoned.overlay)
+        #apply_map_overlay(new_zoned.overlay)
         # TODO: generate image for objective
         return new_zoned
 
     def delete_objective_by_id(self, obj_id: int) -> bool:
-        for obj in self.obj_list:
+        remaining_obj = self.obj_list.copy()
+        for obj in remaining_obj:
             if obj.id == obj_id:
                 self.obj_list.remove(obj)
                 if isinstance(obj, BeaconObjective):
                     self.beacon_list.remove(obj)
                 else:
-                    self.obj_img_map.pop(obj.id, None)
                     self.zoned_list.remove(obj)
-                    remove_map_overlay(obj.overlay)
+                    #remove_map_overlay(obj.overlay)
                 return True
         return False
 
-    def get_obj_img(self, obj_id: int) -> Optional[Image]:
-        return self.obj_img_map.get(obj_id, None)
+    def delete_all(self):
+        self.obj_list = []
+        self.zoned_list = []
+        self.beacon_list = []
 
 
 obj_manager = ObjManager()
