@@ -53,7 +53,7 @@ class ZonedObjective:
 
         rand_x_coord = random.randint(0, MAP_WIDTH - 1)
         rand_y_coord = random.randint(0, MAP_HEIGHT - 1)
-        # TODO: Fix hardcoded numbers!
+
         rand_angle = random.choice(list(CameraAngle))
         dy = rand_angle.get_side_length()
         dx_fac = random.randint(1, 4)
@@ -73,7 +73,7 @@ class ZonedObjective:
             end=end,
             decrease_rate=0.99,
             zone=rand_zone,
-            optic_required=rand_angle.value(),
+            optic_required=rand_angle.value,
             coverage_required=rand_coverage,
             description=random.choice(ZONED__DESCRIPTIONS),
             sprite=None,
@@ -116,8 +116,8 @@ class ZonedObjective:
             return {
                 "id": self.id,
                 "name": self.name,
-                "start": self.start.isoformat() + "Z",
-                "end": self.end.isoformat() + "Z",
+                "start": self.start.isoformat().replace("+00:00", "Z"),
+                "end": self.end.isoformat().replace("+00:00", "Z"),
                 "decrease_rate": self.decrease_rate,
                 "optic_required": self.optic_required,
                 "description": self.description,
@@ -126,8 +126,8 @@ class ZonedObjective:
         return {
             "id": self.id,
             "name": self.name,
-            "start": self.start.isoformat() + "Z",
-            "end": self.end.isoformat() + "Z",
+            "start": self.start.isoformat().replace("+00:00", "Z"),
+            "end": self.end.isoformat().replace("+00:00", "Z"),
             "zone": self.zone,
             "decrease_rate": self.decrease_rate,
             "optic_required": self.optic_required,

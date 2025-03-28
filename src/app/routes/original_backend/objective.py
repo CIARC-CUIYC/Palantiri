@@ -7,20 +7,6 @@ from src.app.models.obj_manager import obj_manager
 
 bp = Blueprint('objective', __name__)
 
-
-@bp.before_request
-def objective_mute_log():
-    if request.method == 'GET':
-        werkzeug_logger = logging.getLogger('werkzeug')
-        werkzeug_logger.setLevel(logging.ERROR)
-
-
-@bp.after_request
-def objective_unmute_log():
-    if request.method == 'GET':
-        werkzeug_logger = logging.getLogger('werkzeug')
-        werkzeug_logger.setLevel(logging.INFO)
-
 @bp.route('/objective', methods=['GET'])
 def objective():
     return jsonify(obj_manager.get_all_objectives())

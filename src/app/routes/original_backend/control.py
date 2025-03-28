@@ -21,9 +21,9 @@ def control():
         if not all(field in data for field in required_fields):
             raise BadRequest("Missing required control fields.")
 
-        safe_mode_block = (melvin.melvin_state is SatStates.SAFE and melvin.bat < 10.0)
+        safe_mode_block = (melvin.state is SatStates.SAFE and melvin.bat < 10.0)
 
-        if melvin.melvin_state.value != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
+        if melvin.state.value != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
             try:
                 ControlValidation.validate_input_state(data["state"])
                 melvin.update_state(state=data["state"])
@@ -36,7 +36,7 @@ def control():
             ControlValidation.validate_input_angle(data["camera_angle"])
             ControlValidation.validate_input_velocity([data["vel_x"], data["vel_y"]])
             assert(type(data["vel_x"]) == float and type(data["vel_y"]) == float)
-            if melvin.melvin_state == SatStates.ACQUISITION:
+            if SatStates(melvin.state) == SatStates.ACQUISITION:
                 melvin.update_control(
                     vel_x=data["vel_x"],
                     vel_y=data["vel_y"],
@@ -50,7 +50,7 @@ def control():
             response["vel_x"] = melvin.vel[0]
             response["vel_y"] = melvin.vel[1]
             response["camera_angle"] = melvin.camera_angle.value
-            response["state"] = melvin.melvin_state.value
+            response["state"] = melvin.state.value
         except BadRequest as e:
             response["error"] = str(e)
             status_code = 400
@@ -69,7 +69,7 @@ class ControlValidation:
         if not SatStates.is_valid_sat_state(input_state):
             raise BadRequest("Invalid target state")
 
-        if melvin.melvin_state == SatStates.TRANSITION:
+        if melvin.state == SatStates.TRANSITION:
             raise BadRequest("Target state cannot be set during transition.")
 
         if input_state == SatStates.DEPLOYMENT:

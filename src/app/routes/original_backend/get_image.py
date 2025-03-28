@@ -11,7 +11,6 @@ def get_image():
     try:
         melvin_pos = (round(melvin.pos[0]), round(melvin.pos[1]))
         angle = melvin.camera_angle
-        # TODO: implement image access
         img = get_map_chunk(melvin_pos, angle.get_side_length())
         img_stream = io.BytesIO(img)
         return send_file(img_stream, mimetype='image/png')

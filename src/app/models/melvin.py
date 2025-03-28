@@ -22,7 +22,7 @@ class Melvin:
         self.vel = START_VEL.copy()
         self.bat = START_BAT
         self.fuel = START_FUEL
-        self.melvin_state = SatStates.DEPLOYMENT
+        self.state = SatStates.DEPLOYMENT
         self.camera_angle = CameraAngle.NORMAL
 
         self.state_target = None
@@ -62,7 +62,7 @@ class Melvin:
     def update_battery(self):
         if self.vel_plan:
             self.bat += ADD_BAT_COST
-        self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.melvin_state)
+        self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.state)
         self.bat = Helpers.clamp(self.bat, 0, 100)
         if self.bat <= 0 and self.state_target != SatStates.SAFE:
             self.state_target = SatStates.SAFE
@@ -73,21 +73,21 @@ class Melvin:
 
         if self.transition_time == 0:
             self.transition_time = None
-            self.melvin_state = self.state_target
+            self.state = SatStates(self.state_target)
             self.state_target = None
-            self.logger.info(f"Melvin state changed to {self.melvin_state.name}")
+            self.logger.info(f"Melvin state changed to {self.state.name}")
 
     def check_for_transition(self):
-        if self.melvin_state != self.state_target and self.state_target is not None and self.melvin_state != SatStates.TRANSITION:
-            self.melvin_state = SatStates.TRANSITION
+        if self.state != self.state_target and self.state_target is not None and self.state != SatStates.TRANSITION:
+            self.state = SatStates.TRANSITION
             self.vel_plan = []
-            self.transition_time = Helpers.get_transition_time(self.melvin_state, self.state_target)
+            self.transition_time = Helpers.get_transition_time(self.state, self.state_target)
             self.logger.info(
-                f"Melvin state chang started to {self.melvin_state.name}. Transition is {self.transition_time}s.")
+                f"Melvin state chang started to {self.state_target.name}. Transition is {self.transition_time}s.")
 
     def get_observation(self):
         return OrderedDict({
-            "state": self.melvin_state.value,
+            "state": self.state.value,
             "angle": self.camera_angle.value,
             "simulation_speed": 1,
             "width_x": int(round(self.pos[0])),
@@ -113,28 +113,32 @@ class Melvin:
         self.vel = START_VEL.copy()
         self.bat = START_BAT
         self.fuel = START_FUEL
-        self.melvin_state = SatStates.DEPLOYMENT
+        self.state = SatStates.DEPLOYMENT
         self.camera_angle = CameraAngle.NORMAL
         self.logger.info("Melvin reset.")
 
     def update_state(self, state):
-        if self.melvin_state != SatStates.TRANSITION:
+        if self.state != SatStates.TRANSITION:
             self.state_target = SatStates(state)
             self.logger.info(f"Melvin target state changed to {state}")
 
     def update_control(self, vel_x, vel_y, camera_angle):
-        self.camera_angle = CameraAngle(camera_angle)
+        if self.camera_angle != CameraAngle(camera_angle):
+            self.logger.info(f"Melvin camera angle changed to {camera_angle}")
+            self.camera_angle = CameraAngle(camera_angle)
         if self.vel[0] != vel_x or self.vel[1] != vel_y:
             self.set_target_velocity([vel_x, vel_y])
 
     def set_target_velocity(self, target_vel):
         self.vel_plan = Helpers.validate_velocity_change(self.vel, target_vel)  # list of (vx, vy) steps
-        print(f"[Melvin] Velocity plan accepted: {len(self.vel_plan)} steps")
+        self.logger.info(f"[Melvin] Velocity plan accepted: {len(self.vel_plan)} steps")
         return True
 
     def update_velocity(self):
         next_v = self.vel_plan.pop(0)
         self.vel = list(next_v)
+        if not self.vel_plan:
+            self.logger.info(f"[Melvin] Velocity plan finished, velocity is {self.vel}.")
 
 
 melvin = Melvin()

@@ -131,8 +131,8 @@ class Helpers:
 
     @staticmethod
     def compute_acceleration_limits(dvx, dvy):
-        ax = pow(ACC_CONST, 2) / math.sqrt(1 + (dvy / dvx) ** 2) if dvx != 0 else 0
-        ay = pow(ACC_CONST, 2) / math.sqrt(1 + (dvx / dvy) ** 2) if dvy != 0 else 0
+        ax = math.sqrt(pow(ACC_CONST, 2) / (1 + (dvy / dvx) ** 2)) if dvx != 0 else 0
+        ay = math.sqrt(pow(ACC_CONST, 2) / (1 + (dvx / dvy) ** 2)) if dvy != 0 else 0
         return ax, ay
 
     @staticmethod
@@ -147,10 +147,14 @@ class Helpers:
             if abs(dvx) < 1e-3 and abs(dvy) < 1e-3:
                 break  # Target reached
 
-            ax, ay = Helpers.compute_acceleration_limits(dvx, dvy)
+            ax_abs, ay_abs = Helpers.compute_acceleration_limits(abs(dvx), abs(dvy))
+            ax = math.copysign(ax_abs, dvx)
+            ay = math.copysign(ay_abs, dvy)
+            ax = min(ax, dvx)
+            ay = min(ay, dvy)
 
-            step_vx = current_v[0] + ax * SIM_STEP_DUR
-            step_vy = current_v[1] + ay * SIM_STEP_DUR
+            step_vx = current_v[0] + ax
+            step_vy = current_v[1] + ay
 
             current_v = [step_vx, step_vy]
             plan.append(tuple(current_v))

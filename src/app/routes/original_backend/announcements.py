@@ -23,7 +23,7 @@ def stream_beacon_pings():
             now = sim_clock.get_time().replace(tzinfo=timezone.utc)
             start_of_new_min = now.second == 0
 
-            if melvin.melvin_state != SatStates.COMMS:
+            if melvin.state != SatStates.COMMS:
                 continue
 
             if start_of_new_min:
