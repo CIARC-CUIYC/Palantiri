@@ -148,6 +148,7 @@ class ZonedObjective:
                 "coverage_required": self.coverage_required,
                 "description": self.description,
                 "secret": True,
+                "zone": "unknown",
                 "sprite": None
             }
         return {
