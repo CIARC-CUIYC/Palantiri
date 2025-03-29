@@ -1,7 +1,9 @@
 # 🔮 Palantíri SIL Framework
 
 **Palantíri** (Quenya plural of *Palantír*, “far-seer”) is a Python-based **Software-in-the-Loop (SIL)** simulation framework 
-developed to emulate the backend system provided by ESA for CIARC 2024/25. The framework simulates MELVIN’s internal
+developed to emulate the backend system provided by ESA for CIARC 2024/25.
+
+The framework simulates MELVIN’s internal
 state and trajectory, and enables both control and observation of the simulation via API endpoints built with Flask.
 In addition, it accurately models beacons and zones—both known and secret—along with their dynamic states.
 
@@ -56,7 +58,7 @@ Can receive target velocity and gradually apply it in validated steps.
 
 ---
 
-## 🧪 Setup Instructions
+## 🔨 Setup Instructions
 
 1. **Clone the repo**
    ```bash
@@ -80,7 +82,7 @@ Can receive target velocity and gradually apply it in validated steps.
    python src/__main__.py
    ```
 ---
-## Configuration of PUT /objective
+## ⚙️ Configuration of PUT /objective
 Differing from the PUT command at the /objective endpoint of the actual CIARC backend that commanding of the Palantiri
 endpoint differs slighty
 ```json
