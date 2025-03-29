@@ -63,7 +63,7 @@ Can receive target velocity and gradually apply it in validated steps.
 1. **Clone the repo**
    ```bash
    git clone  https://github.com/CIARC-CUIYC/Palantiri.git
-   cd cd Palantiri
+   cd Palantiri
    ```
 
 2. **Create and activeate virtual environment**
@@ -79,7 +79,7 @@ Can receive target velocity and gradually apply it in validated steps.
 
 4. **Run the simulation**
    ```bash
-   python src/__main__.py
+   python -m src
    ```
 ---
 ## ⚙️ Configuration of PUT /objective
@@ -109,8 +109,8 @@ endpoint differs slighty
         "sprite": null,
         "secret": false
         }
-  ],    // optional
-  "beacon_objectives": [      // optional field, can be entere [] for empty
+  ],                          // optional field, can be entere [] for empty
+  "beacon_objectives": [      
     {
         "id": 2,
         "name": "EBT 2",
