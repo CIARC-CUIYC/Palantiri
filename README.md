@@ -17,8 +17,7 @@ In addition, it accurately models beacons and zones—both known and secret—al
 - 🔊 Real-time SSE (Server-Sent Events) for beacon pings
 - 🎯 Objective management: zoned & beacon-based
 - ⚡  Lightweight Flask backend for easy integration with external systems
-- 🗺️ TODO: Self hosted image compression
-- TODO: Docker compose
+- 🗺️ TODO: objective images and compression
 ---
 
 ## 📁 Folder Structure
@@ -90,7 +89,7 @@ endpoint differs slightly
 
   "num_random_zoned": 0,      // required field
   "num_random_beacon": 0,     // required field
-  "zoned_objectives": [       // optional field, can be entere [] for empty
+  "zoned_objectives": [       // optional field, [] if empty
     {
         "id": 1,
         "name": "Precise Picture 10",
@@ -109,7 +108,7 @@ endpoint differs slightly
         "sprite": null,
         "secret": false
         }
-  ],                          // optional field, can be entere [] for empty
+  ],                          // optional field, [] if empty
   "beacon_objectives": [      
     {
         "id": 2,
@@ -128,9 +127,17 @@ endpoint differs slightly
 ```
 ---
 ## 🐳 Containerized SIL Deployment
-TODO
+To run MELVIN-OB inside the Cirdan container environment (with the SIL framework):
+```bash
+git clone https://github.com/CIARC-CUIYC/cirdan.git
+cd cirdan
+docker compose up --build
+```
+This setup includes:
+* [melvin-ob](https://github.com/CIARC-CUIYC/melvin-ob) in a terminal-accessible tmux session
+* Palantíri SIL backend (exposes REST API)
 
----
+See detailed instructions [here](https://github.com/CIARC-CUIYC/cirdan).
 
 
 
