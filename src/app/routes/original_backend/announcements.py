@@ -1,5 +1,7 @@
 import time
 from datetime import timezone
+from typing import Generator
+
 from flask import Blueprint, Response
 
 from src.app.constants import BEACON_MAX_DETECT_RANGE, SatStates
@@ -13,8 +15,22 @@ bp = Blueprint('announcements', __name__)
 
 # --- SSE Ping Endpoint ---
 @bp.route('/announcements', methods=['GET'])
-def stream_beacon_pings():
-    def event_stream():
+def stream_beacon_pings() -> Response:
+    """
+    Server-Sent Events (SSE) endpoint for broadcasting beacon pings
+    when Melvin is in communication state and near active beacons.
+
+    Returns:
+        Response: A streaming HTTP response with `text/event-stream` MIME type.
+    """
+    def event_stream() -> Generator[str, None, None]:
+        """
+        Generator function that yields beacon ping data to the client every second
+        if conditions are met (e.g. active beacon, proximity, communication state).
+
+        Yields:
+            str: Formatted SSE message.
+        """
         print("[INFO] Event stream started!")
         while True:
             if not obj_manager.obj_list:

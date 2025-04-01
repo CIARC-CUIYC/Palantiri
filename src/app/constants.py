@@ -1,39 +1,52 @@
 from enum import Enum
 
-MAP_WIDTH = 21600
-MAP_HEIGHT = 10800
+# Map dimensions (pixels)
+MAP_WIDTH: int = 21600
+MAP_HEIGHT: int = 10800
 
-START_POS_X = 7638
-START_POS_Y = 5089
-START_POS = [START_POS_X, START_POS_Y]
+# Initial satellite position
+START_POS_X: float = 7638.0
+START_POS_Y: float = 5089.0
+START_POS: list[float] = [START_POS_X, START_POS_Y]
 
-START_VEL_X = 4.35
-START_VEL_Y = 5.49
-START_VEL = [START_VEL_X, START_VEL_Y]
-MIN_ALLOWED_VEL = 3.0
-MAX_ALLOWED_VEL = 71.0
-MAX_ALLOWED_VEL_ANGLE = 170
+# Initial satellite velocity
+START_VEL_X: float = 4.35
+START_VEL_Y: float = 5.49
+START_VEL: list[float] = [START_VEL_X, START_VEL_Y]
 
-ACC_CONST = 0.01
+# Velocity constraints
+MIN_ALLOWED_VEL: float = 3.0
+MAX_ALLOWED_VEL: float = 71.0
+MAX_ALLOWED_VEL_ANGLE: int = 170
 
-FUEL_COST = 0.015
-ADD_BAT_COST = -0.025
+# Acceleration constant (units per sim step)
+ACC_CONST: float = 0.01
 
+# burn constants (battery/fuel) (unit per sim step)
+FUEL_COST: float = 0.015
+ADD_BAT_COST_BURN: float = -0.025
 
-START_BAT = 100.0
-START_FUEL = 100.0
+# Starting resources
+START_BAT: float = 100.0
+START_FUEL: float = 100.0
 
-SIM_STEP_DUR = 0.5
+# Sim step duration (seconds)
+SIM_STEP_DUR: float = 0.5
 
-TRANSITION_TIME_STANDARD = (3 * 60) - 1
-TRANSITION_TIME_FROM_SAFE = 20 * 60
-TRANSITION_TIME_TO_SAFE = 1 * 60
+# Transition times between satellite states (seconds)
+TRANSITION_TIME_STANDARD: int = (3 * 60) - 1
+TRANSITION_TIME_FROM_SAFE: int = 20 * 60
+TRANSITION_TIME_TO_SAFE: int = 1 * 60
 
-BEACON_MAX_DETECT_RANGE = 2000
-BEACON_GUESS_TOLERANCE = 75
+# Beacon detection settings
+BEACON_MAX_DETECT_RANGE: int = 2000
+BEACON_GUESS_TOLERANCE: int = 75
 
 
 class SatStates(Enum):
+    """
+    Enum representing the different operational states of the satellite.
+    """
     DEPLOYMENT = "deployment"
     ACQUISITION = "acquisition"
     CHARGE = "charge"
@@ -42,10 +55,24 @@ class SatStates(Enum):
     TRANSITION = "transition"
 
     @staticmethod
-    def is_valid_sat_state(input_state):
+    def is_valid_sat_state(input_state: str) -> bool:
+        """
+        Checks if a string corresponds to a valid satellite state.
+
+        Args:
+            input_state (str): The state to validate.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
         return input_state in {state.value for state in SatStates}
 
+
 class StateBatteryRate(Enum):
+    """
+    Enum mapping each satellite state to its associated battery consumption or charge rate.
+    Positive values indicate charging, negative indicate consumption.
+    """
     DEPLOYMENT = -0.025
     ACQUISITION = -0.05
     CHARGE = 0.05
@@ -55,18 +82,38 @@ class StateBatteryRate(Enum):
 
 
 class CameraAngle(Enum):
+    """
+    Enum representing different camera field-of-view settings.
+    """
     NARROW = "narrow"
     NORMAL = "normal"
     WIDE = "wide"
 
     @staticmethod
-    def is_valid_camera_angle(input_angle):
+    def is_valid_camera_angle(input_angle: str) -> bool:
+        """
+        Check if a string corresponds to a valid camera angle.
+
+        Args:
+            input_angle (str): The angle to validate.
+
+        Returns:
+            bool: True if valid, False otherwise.
+        """
         return input_angle in {angle.value for angle in CameraAngle}
 
-    def get_side_length(self):
+    def get_side_length(self) -> int:
+        """
+        Get the image side length (in pixels) associated with the camera angle.
+
+        Returns:
+            int: Side length in pixels.
+        """
         if self == CameraAngle.NARROW:
             return 600
         elif self == CameraAngle.NORMAL:
             return 800
         elif self == CameraAngle.WIDE:
             return 1000
+
+        return 0

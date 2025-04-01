@@ -7,8 +7,8 @@ class SimulationClock:
         self._tick_rate = timedelta(seconds=1)  # real-time = 1s per tick
         self._advance_per_tick = timedelta(seconds=1)  # 1s of sim time per tick
 
-    def start(self):
-        def run():
+    def start(self) -> None:
+        def run() -> None:
             while True:
                 self.sim_time += self._advance_per_tick
                 threading.Event().wait(self._tick_rate.total_seconds())

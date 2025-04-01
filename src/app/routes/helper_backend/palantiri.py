@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from werkzeug.exceptions import BadRequest
 
 bp = Blueprint("palantiri", __name__, url_prefix="/palantiri")
 
-QUOTE_RESPONSES = {
+QUOTE_RESPONSES: dict[str, str] = {
     "The Beacons of Minas Tirith! The Beacons are lit! Gondor calls for aid.":
         "And Rohan will answer!",
     "You shall not pass!": "Fly, you fools!",
@@ -12,7 +12,18 @@ QUOTE_RESPONSES = {
 
 
 @bp.route("/", methods=["POST"])
-def palantiri_reply():
+def palantiri_reply() -> Response:
+    """
+    Respond to a known Tolkien quote with a matching reply.
+
+    Request JSON must include:
+        {
+            "quote": "<a known Tolkien quote>"
+        }
+
+    Returns:
+        Response: A JSON reply with a key "reply".
+    """
     data = request.get_json()
     if not data or "quote" not in data:
         raise BadRequest("Missing 'quote' in request body.")

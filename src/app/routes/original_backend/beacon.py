@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+from typing import Dict, Any, Optional, List, Tuple
+
+from flask import Blueprint, request, jsonify, Response
 from werkzeug.exceptions import BadRequest
 
 from src.app.constants import BEACON_GUESS_TOLERANCE, MAP_HEIGHT, MAP_WIDTH
@@ -12,8 +14,19 @@ beacon_guess_tracker = {}  # beacon_id -> int
 
 
 @bp.route('/beacon', methods=['PUT'])
-def guess_beacon():
-    data = request.get_json(silent=True) or {}
+def guess_beacon() -> Tuple[Response, int]:
+    """
+    Handle a beacon position guess. Accepts either JSON or query parameters.
+
+    Request:
+        JSON or query string with:
+        - beacon_id (int)
+        - guess (List[int] or height + width query params)
+
+    Returns:
+        JSON response with success/failure status and attempt count.
+    """
+    data: Dict[str, Any] = request.get_json(silent=True) or {}
 
     # Fallback to query params if no JSON body
     if not data and request.args:
@@ -27,8 +40,8 @@ def guess_beacon():
     if not data or 'beacon_id' not in data or 'guess' not in data:
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
-    beacon_id = data['beacon_id']
-    guess_pos = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
+    beacon_id: Optional[int] = data['beacon_id']
+    guess_pos: List[int] = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
 
     BeaconValidation.validate_input_beacon_position(guess_pos)
 
@@ -41,22 +54,35 @@ def guess_beacon():
     if beacon_guess_tracker[beacon_id] >= 3:
         return jsonify({"error": "Maximum number of guesses reached for this beacon."}), 403
 
-    true_beac_pos = [beacon.width, beacon.height]
+    true_beac_pos: List[int] = [beacon.width, beacon.height]
 
-    guess_beac_distance = Helpers.unwrapped_to(true_beac_pos, guess_pos)
+    guess_beac_distance: float = Helpers.unwrapped_to(true_beac_pos, guess_pos)
     beacon_guess_tracker[beacon_id] += 1
 
     if guess_beac_distance <= BEACON_GUESS_TOLERANCE:
         obj_manager.obj_list.remove(beacon)
         obj_manager.beacon_list.remove(beacon)
-        return jsonify({"status": "success", "attempts_made": beacon_guess_tracker[beacon_id]})
+        return jsonify({"status": "success", "attempts_made": beacon_guess_tracker[beacon_id]}), 200
     else:
-        return jsonify({"status": "failure", "attempts_made": beacon_guess_tracker[beacon_id]})
+        return jsonify({"status": "failure", "attempts_made": beacon_guess_tracker[beacon_id]}), 200
 
 
 class BeaconValidation:
+    """
+    Helper class to validate beacon guess input.
+    """
+
     @staticmethod
     def validate_input_beacon_position(input_guess_beacon_pos):
+        """
+        Validate guess position shape and boundaries.
+
+        Args:
+            input_guess_beacon_pos (List[int]): [x, y] guess coordinates.
+
+        Raises:
+            BadRequest: If guess is invalid or out of bounds.
+        """
         if len(input_guess_beacon_pos) != 2:
             raise BadRequest("Guess must hold an x and y coordinate.")
 

@@ -42,12 +42,12 @@ src/
 
 ## 🛰️ Core Components
 
-### **models (`models/`)**
+### **models (`app/models`)**
 - `melvin.py`: Simulates satellite movement, enforcing acceleration constraints, velocity bounds, and fuel consumption.
 Can receive target velocity and gradually apply it in validated steps.
 - `obj_manager.py`: Simulates backend behavior in objective management for both beacon and zoned obj
 
-### **Flask Endpoints ('routes/')**
+### **Flask Endpoints (app/routes`)**
 - `GET /observation`: Returns MELVIN’s current telemetry
 - `PUT /control`: Command a new target velocity and camera state
 - `GET /announcements`: SSE stream emitting beacon pings if active & in range

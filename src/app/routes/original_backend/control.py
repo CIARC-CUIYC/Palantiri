@@ -1,6 +1,7 @@
 import logging
+from typing import Any, Dict, Tuple
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 
 from src.app.constants import MIN_ALLOWED_VEL, MAX_ALLOWED_VEL, SatStates, CameraAngle, MAX_ALLOWED_VEL_ANGLE
 from src.app.helpers import Helpers
@@ -11,11 +12,22 @@ bp = Blueprint('control', __name__)
 
 
 @bp.route('/control', methods=['PUT'])
-def control():
+def control() -> Tuple[Response, int]:
+    """
+    Update Melvin's control state including velocity, camera angle, and operational state.
+    Requires JSON with:
+      - vel_x (float)
+      - vel_y (float)
+      - camera_angle (str)
+      - state (str)
+
+    Returns:
+        JSON response indicating update status or validation errors.
+    """
     try:
-        data = request.get_json()
-        response = {}
-        status_code = 200
+        data: Dict[str, Any] = request.get_json()
+        response: Dict[str, Any] = {}
+        status_code: int = 200
 
         required_fields = ["vel_x", "vel_y", "camera_angle", "state"]
         if not all(field in data for field in required_fields):
@@ -23,7 +35,8 @@ def control():
 
         safe_mode_block = (melvin.state is SatStates.SAFE and melvin.bat < 10.0)
 
-        if melvin.state.value != data["state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
+        if melvin.state.value != data[
+            "state"] and melvin.state_target is not SatStates.TRANSITION and not safe_mode_block:
             try:
                 ControlValidation.validate_input_state(data["state"])
                 melvin.update_state(state=data["state"])
@@ -35,7 +48,7 @@ def control():
         try:
             ControlValidation.validate_input_angle(data["camera_angle"])
             ControlValidation.validate_input_velocity([data["vel_x"], data["vel_y"]])
-            assert(type(data["vel_x"]) == float and type(data["vel_y"]) == float)
+            assert (type(data["vel_x"]) == float and type(data["vel_y"]) == float)
             if SatStates(melvin.state) == SatStates.ACQUISITION:
                 melvin.update_control(
                     vel_x=data["vel_x"],
@@ -63,9 +76,18 @@ def control():
 
 
 class ControlValidation:
+    """
+    Helper class to validate user control input.
+    """
 
     @staticmethod
-    def validate_input_state(input_state):
+    def validate_input_state(input_state: str) -> None:
+        """
+        Validate that the given state is a legal target state.
+
+        Raises:
+            BadRequest: If the state is invalid or disallowed.
+        """
         if not SatStates.is_valid_sat_state(input_state):
             raise BadRequest("Invalid target state")
 
@@ -80,11 +102,23 @@ class ControlValidation:
 
     @staticmethod
     def validate_input_angle(input_angle):
+        """
+        Validate the requested camera angle.
+
+        Raises:
+            BadRequest: If angle is not recognized.
+        """
         if not CameraAngle.is_valid_camera_angle(input_angle):
             raise BadRequest("Invalid camera angle.")
 
     @staticmethod
     def validate_input_velocity(input_vel):
+        """
+        Validate velocity vector is within bounds and not too sharp a turn.
+
+        Raises:
+            BadRequest: If velocity violates constraints.
+        """
         if input_vel[0] == melvin.vel[0] and input_vel[1] == melvin.vel[1]:
             return
 

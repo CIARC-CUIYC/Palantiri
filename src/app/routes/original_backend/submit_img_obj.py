@@ -7,7 +7,20 @@ from src.app.routes.original_backend.get_image import bp
 
 
 @bp.route('/image', methods=['POST'])
-def submit_img_obj():
+def submit_img_obj() -> tuple[object, int]:
+    """
+    Handle a submitted image for a specific objective.
+    (Future: Compare the submitted image to the expected one.)
+
+    Query Params:
+        objective_id (int): The ID of the objective being submitted.
+
+    Form Data:
+        image (file): The uploaded image file.
+
+    Returns:
+        Tuple[object, int]: Confirmation JSON and HTTP status code.
+    """
     try:
         obj_id = int(request.args.get('objective_id'))
         uploaded_file = request.files.get('image')

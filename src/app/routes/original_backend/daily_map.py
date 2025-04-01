@@ -1,4 +1,5 @@
 import logging
+from typing import Tuple
 
 from flask import Blueprint, request, jsonify
 from PIL import Image, ImageChops
@@ -9,7 +10,16 @@ bp = Blueprint('dailyMap', __name__)
 
 
 @bp.route('/dailyMap', methods=['POST'])
-def upload_daily_map():
+def upload_daily_map() -> Tuple[dict, int]:
+    """
+    Handle POST upload of a daily map image and compare it with the original.
+
+    Expects:
+        A multipart/form-data request with an 'image' field.
+
+    Returns:
+        Tuple[dict, int]: JSON response and HTTP status code.
+    """
     try:
         uploaded_file = request.files.get('image')
         if not uploaded_file:

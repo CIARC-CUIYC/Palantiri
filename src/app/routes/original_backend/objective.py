@@ -1,30 +1,40 @@
 import logging
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from werkzeug.exceptions import BadRequest
 
 from src.app.models.obj_manager import obj_manager
 
 bp = Blueprint('objective', __name__)
 
+
 @bp.route('/objective', methods=['GET'])
-def objective():
+def objective() -> Response:
+    """
+    Retrieve all active objectives (zoned and beacon).
+
+    Returns:
+        JSON: A dictionary containing lists of objectives.
+    """
     return jsonify(obj_manager.get_all_objectives())
 
 
-"""
-The expected JSON body for this endpoint is:
-{
-  "num_random_zoned": 0,
-  "num_random_beacon": 0,
-  "zoned_objectives": [],    // optional
-  "beacon_objectives": []     // optional
-}
-"""
-
-
 @bp.route('/objective', methods=['PUT'])
-def add_objectives():
+def add_objectives() -> tuple[Response, int]:
+    """
+    Add new objectives via JSON body. Supports manual and random generation.
+
+    Expected JSON structure:
+    {
+        "num_random_zoned": int,
+        "num_random_beacon": int,
+        "zoned_objectives": [ ... ],
+        "beacon_objectives": [ ... ]
+    }
+
+    Returns:
+        Tuple[JSON, int]: Response with created objectives, or error.
+    """
     data = request.get_json()
     if not data:
         raise BadRequest("Missing request body.")
@@ -71,7 +81,16 @@ def add_objectives():
 
 
 @bp.route('/', methods=['DELETE'])
-def delete_objective():
+def delete_objective() -> tuple[Response, int]:
+    """
+    Delete an objective by ID, using a query parameter.
+
+    Query Parameters:
+        id (int): The objective ID to delete.
+
+    Returns:
+        JSON: Confirmation or error message.
+    """
     obj_id = request.args.get('id', type=int)
 
     if obj_id is None:
@@ -80,6 +99,6 @@ def delete_objective():
     success = obj_manager.delete_objective_by_id(obj_id)
 
     if success:
-        return jsonify({"message": f"Objective with ID {obj_id} deleted."})
+        return jsonify({"message": f"Objective with ID {obj_id} deleted."}), 200
     else:
         return jsonify({"message": f"Objective with ID {obj_id} not found."}), 404

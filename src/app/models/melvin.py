@@ -3,6 +3,8 @@ import logging
 import threading
 from collections import OrderedDict
 from datetime import timedelta, datetime, timezone
+from logging import Logger
+from typing import Optional, List
 
 from src.app.constants import *
 from src.app.helpers import Helpers
@@ -16,27 +18,30 @@ logging.basicConfig(
 
 
 class Melvin:
-    SIM_DUR_PRINTS = 300
+    SIM_DUR_PRINTS: int = 300
 
-    def __init__(self):
-        self.pos = START_POS.copy()
-        self.vel = START_VEL.copy()
-        self.bat = START_BAT
-        self.fuel = START_FUEL
-        self.state = SatStates.DEPLOYMENT
-        self.camera_angle = CameraAngle.NORMAL
+    def __init__(self) -> None:
+        self.pos: list[float] = START_POS.copy()
+        self.vel: list[float] = START_VEL.copy()
+        self.bat: float = START_BAT
+        self.fuel: float = START_FUEL
+        self.state: SatStates = SatStates.DEPLOYMENT
+        self.camera_angle: CameraAngle = CameraAngle.NORMAL
 
-        self.state_target = None
-        self.transition_time = None
+        self.state_target: Optional[SatStates] = None
+        self.transition_time: Optional[float] = None
 
-        self.vel_plan = None
+        self.vel_plan: Optional[List[tuple[float, float]]] = None
 
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.sim_duration = timedelta(seconds=0)
+        self.logger: Logger = logging.getLogger(self.__class__.__name__)
+        self.sim_duration: timedelta = timedelta(seconds=0)
 
         self.logger.info("Melvin initialized. Default start values set.")
 
-    def next_sim_step(self):
+    def next_sim_step(self) -> None:
+        """
+        Advance the simulation by one step.
+        """
         self.check_for_transition()
         if self.transition_time:
             self.handle_transition_time()
@@ -53,24 +58,33 @@ class Melvin:
         if self.sim_duration.total_seconds() % self.SIM_DUR_PRINTS == 0:
             self.logger.info(f"Simulation duration: {Helpers.format_sim_duration(self.sim_duration)}")
 
-    def update_pos(self):
+    def update_pos(self) -> None:
+        """
+        Update Melvin's position using current velocity and simulation time step.
+        """
         self.pos[0] += self.vel[0] * SIM_STEP_DUR
         self.pos[1] += self.vel[1] * SIM_STEP_DUR
 
         self.pos[0] = Helpers.wrap_coordinate(self.pos[0], MAP_WIDTH)
         self.pos[1] = Helpers.wrap_coordinate(self.pos[1], MAP_HEIGHT)
 
-    def update_battery(self):
+    def update_battery(self) -> None:
+        """
+        Update battery level based on state and actions.
+        """
         if self.vel_plan:
-            self.bat += ADD_BAT_COST
+            self.bat += ADD_BAT_COST_BURN
         self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.state)
         self.bat = Helpers.clamp(self.bat, 0, 100)
         if self.bat <= 0 and self.state_target != SatStates.SAFE:
             self.state_target = SatStates.SAFE
             self.logger.info("Melvin battery empty. Forced transition to safe mode.")
 
-    def handle_transition_time(self):
-        self.transition_time = max(0, self.transition_time - SIM_STEP_DUR)
+    def handle_transition_time(self) -> None:
+        """
+        Manage countdown and completion of state transitions.
+        """
+        self.transition_time = max(0.0, self.transition_time - SIM_STEP_DUR)
 
         if self.transition_time == 0:
             self.transition_time = None
@@ -78,7 +92,10 @@ class Melvin:
             self.state_target = None
             self.logger.info(f"Melvin state changed to {self.state.name}")
 
-    def check_for_transition(self):
+    def check_for_transition(self) -> None:
+        """
+        Initiate state transition if a valid target state is set.
+        """
         if self.state != self.state_target and self.state_target is not None and self.state != SatStates.TRANSITION:
             self.state = SatStates.TRANSITION
             self.vel_plan = []
@@ -86,7 +103,13 @@ class Melvin:
             self.logger.info(
                 f"Melvin state chang started to {self.state_target.name}. Transition is {self.transition_time}s.")
 
-    def get_observation(self):
+    def get_observation(self) -> OrderedDict[str, float | int | str]:
+        """
+        Collect and return current simulation state as an observation.
+
+        Returns:
+            OrderedDict[str, Any]: A dictionary of current values.
+        """
         return OrderedDict({
             "state": self.state.value,
             "angle": self.camera_angle.value,
@@ -109,7 +132,10 @@ class Melvin:
 
         })
 
-    def reset(self):
+    def reset(self) -> None:
+        """
+        Reset Melvin to default starting values and clear all objectives.
+        """
         self.pos = START_POS.copy()
         self.vel = START_VEL.copy()
         self.bat = START_BAT
@@ -120,24 +146,50 @@ class Melvin:
         obj_manager.delete_all()
         self.logger.info("Melvin reset.")
 
-    def update_state(self, state):
+    def update_state(self, state: SatStates) -> None:
+        """
+        Set the satellite's next target state.
+
+        Args:
+            state (str): Name of the target state.
+        """
         if self.state != SatStates.TRANSITION:
             self.state_target = SatStates(state)
             self.logger.info(f"Melvin target state changed to {state}")
 
-    def update_control(self, vel_x, vel_y, camera_angle):
+    def update_control(self, vel_x: float, vel_y: float, camera_angle):
+        """
+        Update Melvin's control parameters including velocity and camera angle.
+
+        Args:
+            vel_x (float): Desired velocity in x.
+            vel_y (float): Desired velocity in y.
+            camera_angle (str): Desired camera angle.
+        """
         if self.camera_angle != CameraAngle(camera_angle):
             self.logger.info(f"Melvin camera angle changed to {camera_angle}")
             self.camera_angle = CameraAngle(camera_angle)
         if self.vel[0] != vel_x or self.vel[1] != vel_y:
             self.set_target_velocity([vel_x, vel_y])
 
-    def set_target_velocity(self, target_vel):
+    def set_target_velocity(self, target_vel: List[float]) -> bool:
+        """
+        Compute a velocity plan to gradually transition to a new velocity.
+
+        Args:
+            target_vel (List[float]): Desired target velocity.
+
+        Returns:
+            bool: True when velocity plan has been accepted.
+        """
         self.vel_plan = Helpers.validate_velocity_change(self.vel, target_vel)  # list of (vx, vy) steps
         self.logger.info(f"[Melvin] Velocity plan accepted: {len(self.vel_plan)} steps")
         return True
 
-    def update_velocity(self):
+    def update_velocity(self) -> None:
+        """
+        Apply the next step in the velocity plan.
+        """
         next_v = self.vel_plan.pop(0)
         self.vel = list(next_v)
         if not self.vel_plan:
@@ -147,7 +199,10 @@ class Melvin:
 melvin = Melvin()
 
 
-def background_updater():
+def background_updater() -> None:
+    """
+    Continuously update the simulation in a background thread.
+    """
     while True:
         next_update_time = datetime.now(timezone.utc) + timedelta(seconds=SIM_STEP_DUR)
         melvin.next_sim_step()
