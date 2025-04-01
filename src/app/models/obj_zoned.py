@@ -2,7 +2,7 @@ import logging
 import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, TypedDict
+from typing import Optional, List, Dict, Any, TypedDict, Union
 from ..helpers import Helpers
 
 from PIL import Image
@@ -19,16 +19,19 @@ ZONED__DESCRIPTIONS: List[str] = [
     "This valley lies between Rohan and Gondor. We must map its ground before war comes.",
 ]
 
+
 class ZonedObjectiveDict(TypedDict):
     id: int
     name: str
     start: str
     end: str
     decrease_rate: float
-    zone: List[int]
+    zone: Union[List[int], str]
     optic_required: str
     coverage_required: float
     description: str
+    sprite: Optional[str]
+    secret: bool
 
 
 @dataclass
@@ -47,7 +50,7 @@ class ZonedObjective:
     description: str
     sprite: Optional[str]
     secret: bool
-    overlay: Optional[Image]
+    overlay: Optional[Image.Image]
 
     def to_dict(self) -> ZonedObjectiveDict:
         """
@@ -65,6 +68,9 @@ class ZonedObjective:
             "zone": self.zone,
             "optic_required": self.optic_required,
             "description": self.description,
+            "coverage_required": self.coverage_required,
+            "sprite": self.sprite,
+            "secret": self.secret,
         }
 
     @staticmethod
@@ -81,18 +87,18 @@ class ZonedObjective:
         start = datetime.now(timezone.utc)  # + timedelta(hours=float(random.randint(1, 3)))
         end = start + timedelta(hours=float(random.randint(2, 6)))
 
-        rand_x_coord = random.randint(0, MAP_WIDTH - 1)
-        rand_y_coord = random.randint(0, MAP_HEIGHT - 1)
+        rand_x_coord: int = random.randint(0, MAP_WIDTH - 1)
+        rand_y_coord: int = random.randint(0, MAP_HEIGHT - 1)
 
         rand_angle = random.choice(list(CameraAngle))
         dy = rand_angle.get_side_length()
         dx_fac = random.randint(1, 4)
         dx = dx_fac * dy
 
-        x_end = Helpers.wrap_coordinate(rand_x_coord + dx, MAP_WIDTH)
-        y_end = Helpers.wrap_coordinate(rand_y_coord + dy, MAP_HEIGHT)
+        x_end = int(Helpers.wrap_coordinate(rand_x_coord + dx, MAP_WIDTH))
+        y_end = int(Helpers.wrap_coordinate(rand_y_coord + dy, MAP_HEIGHT))
 
-        rand_zone = [rand_x_coord, rand_y_coord, x_end, y_end]
+        rand_zone: list[int] = [rand_x_coord, rand_y_coord, x_end, y_end]
 
         rand_coverage = round(random.uniform(0.6, 1.0), 2)
         # overlay = ZonedObjective.get_overlay(rand_zone)
@@ -173,7 +179,7 @@ class ZonedObjective:
         logging.getLogger(__name__).info(f"width: {overlay.width}, height: {overlay.height}")
         return overlay
 
-    def info_to_endpoint(self) -> Dict[str, Any]:
+    def info_to_endpoint(self) -> ZonedObjectiveDict:
         """
         Serialize the objective for API responses, with optional obfuscation.
 

@@ -40,7 +40,7 @@ TRANSITION_TIME_TO_SAFE: int = 1 * 60
 
 # Beacon detection settings
 BEACON_MAX_DETECT_RANGE: int = 2000
-BEACON_GUESS_TOLERANCE: int = 75
+BEACON_GUESS_TOLERANCE: float = 75.0
 
 
 class SatStates(Enum):
@@ -67,8 +67,32 @@ class SatStates(Enum):
         """
         return input_state in {state.value for state in SatStates}
 
+    def get_charge_per_sec(self) -> float:
+        """
+        Map a SatStates enum to a battery rate and return the corresponding charge rate.
 
-class StateBatteryRate(Enum):
+        Returns:
+            float: Battery charge rate for the state.
+
+        Raises:
+            RuntimeError: If the state is unrecognized.
+        """
+        state_to_battery_rate: dict[SatStates, StateBatteryRate] = {
+            SatStates.DEPLOYMENT: StateBatteryRate.DEPLOYMENT,
+            SatStates.ACQUISITION: StateBatteryRate.ACQUISITION,
+            SatStates.CHARGE: StateBatteryRate.CHARGE,
+            SatStates.TRANSITION: StateBatteryRate.TRANSITION,
+            SatStates.SAFE: StateBatteryRate.SAFE,
+            SatStates.COMMS: StateBatteryRate.COMMS,
+        }
+
+        if self in state_to_battery_rate:
+            return state_to_battery_rate[self].value
+        else:
+            raise RuntimeError(f"Unknown State: {self}")
+
+
+class StateBatteryRate(float, Enum):
     """
     Enum mapping each satellite state to its associated battery consumption or charge rate.
     Positive values indicate charging, negative indicate consumption.
@@ -76,7 +100,7 @@ class StateBatteryRate(Enum):
     DEPLOYMENT = -0.025
     ACQUISITION = -0.05
     CHARGE = 0.05
-    TRANSITION = 0
+    TRANSITION = 0.0
     SAFE = 0.0125
     COMMS = -0.004
 

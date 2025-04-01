@@ -9,8 +9,8 @@ from src.app.models.obj_manager import obj_manager
 
 bp = Blueprint('beacon', __name__)
 
-# Store guess counts
-beacon_guess_tracker = {}  # beacon_id -> int
+# Store guess counts: beacon_id, num_guesses
+beacon_guess_tracker: dict[int, int] = {}
 
 
 @bp.route('/beacon', methods=['PUT'])
@@ -27,21 +27,23 @@ def guess_beacon() -> Tuple[Response, int]:
         JSON response with success/failure status and attempt count.
     """
     data: Dict[str, Any] = request.get_json(silent=True) or {}
+    beacon_id: Optional[int] = None
+    guess_pos: List[int] = []
 
     # Fallback to query params if no JSON body
     if not data and request.args:
-        beacon_id = request.args.get("beacon_id", type=int)
-        guess_pos = [
+        _beacon_id = request.args.get("beacon_id", type=int)
+        _guess_pos = [
             request.args.get("height", type=int),
             request.args.get("width", type=int)
         ]
-        data = {"beacon_id": beacon_id, "guess": guess_pos}
+        data = {"beacon_id": _beacon_id, "guess": _guess_pos}
 
     if not data or 'beacon_id' not in data or 'guess' not in data:
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
-    beacon_id: Optional[int] = data['beacon_id']
-    guess_pos: List[int] = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
+    beacon_id = data['beacon_id']
+    guess_pos = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
 
     BeaconValidation.validate_input_beacon_position(guess_pos)
 
@@ -49,14 +51,18 @@ def guess_beacon() -> Tuple[Response, int]:
     if not beacon:
         return jsonify({"error": "Beacon not found."}), 404
 
-    beacon_guess_tracker.setdefault(beacon_id, 0)
+    if beacon_id:
+        beacon_guess_tracker.setdefault(beacon_id, 0)
+    else:
+        return jsonify({"error": "Missing 'beacon_id' in request body."}), 400
 
     if beacon_guess_tracker[beacon_id] >= 3:
         return jsonify({"error": "Maximum number of guesses reached for this beacon."}), 403
 
-    true_beac_pos: List[int] = [beacon.width, beacon.height]
+    true_beac_pos: List[float] = [float(beacon.width), float(beacon.height)]
+    guess_pos_float: List[float] = [float(guess_pos[0]), float(guess_pos[1])]
 
-    guess_beac_distance: float = Helpers.unwrapped_to(true_beac_pos, guess_pos)
+    guess_beac_distance: float = Helpers.unwrapped_to(true_beac_pos, guess_pos_float)
     beacon_guess_tracker[beacon_id] += 1
 
     if guess_beac_distance <= BEACON_GUESS_TOLERANCE:
@@ -73,7 +79,7 @@ class BeaconValidation:
     """
 
     @staticmethod
-    def validate_input_beacon_position(input_guess_beacon_pos):
+    def validate_input_beacon_position(input_guess_beacon_pos: List[int]) -> None:
         """
         Validate guess position shape and boundaries.
 

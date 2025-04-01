@@ -29,7 +29,7 @@ class Melvin:
         self.camera_angle: CameraAngle = CameraAngle.NORMAL
 
         self.state_target: Optional[SatStates] = None
-        self.transition_time: Optional[float] = None
+        self.transition_time: float = 0.0
 
         self.vel_plan: Optional[List[tuple[float, float]]] = None
 
@@ -43,7 +43,7 @@ class Melvin:
         Advance the simulation by one step.
         """
         self.check_for_transition()
-        if self.transition_time:
+        if self.transition_time > 0.0:
             self.handle_transition_time()
 
         self.update_pos()
@@ -74,7 +74,7 @@ class Melvin:
         """
         if self.vel_plan:
             self.bat += ADD_BAT_COST_BURN
-        self.bat += SIM_STEP_DUR * Helpers.get_charge_per_sec(self.state)
+        self.bat += SIM_STEP_DUR * SatStates.get_charge_per_sec(self.state)
         self.bat = Helpers.clamp(self.bat, 0, 100)
         if self.bat <= 0 and self.state_target != SatStates.SAFE:
             self.state_target = SatStates.SAFE
@@ -87,7 +87,7 @@ class Melvin:
         self.transition_time = max(0.0, self.transition_time - SIM_STEP_DUR)
 
         if self.transition_time == 0:
-            self.transition_time = None
+            self.transition_time = 0.0
             self.state = SatStates(self.state_target)
             self.state_target = None
             self.logger.info(f"Melvin state changed to {self.state.name}")
@@ -103,7 +103,7 @@ class Melvin:
             self.logger.info(
                 f"Melvin state chang started to {self.state_target.name}. Transition is {self.transition_time}s.")
 
-    def get_observation(self) -> OrderedDict[str, float | int | str]:
+    def get_observation(self) -> OrderedDict[str, float | int | str | datetime | dict[str, float]]:
         """
         Collect and return current simulation state as an observation.
 
@@ -123,7 +123,7 @@ class Melvin:
             "fuel": round(self.fuel, 2),
             "distance_covered": 1.0,
             "area_covered": {"narrow": 0.0, "normal": 0.0, "wide": 0.0},
-            "data_volume": {"data_volume_sent": 0, "data_volume_received": 0},
+            "data_volume": {"data_volume_sent": 0.0, "data_volume_received": 0.0},
             "images_taken": 0,
             "active_time": 0.0,
             "objectives_done": 0,
@@ -157,7 +157,7 @@ class Melvin:
             self.state_target = SatStates(state)
             self.logger.info(f"Melvin target state changed to {state}")
 
-    def update_control(self, vel_x: float, vel_y: float, camera_angle):
+    def update_control(self, vel_x: float, vel_y: float, camera_angle: str) -> None:
         """
         Update Melvin's control parameters including velocity and camera angle.
 
@@ -190,9 +190,10 @@ class Melvin:
         """
         Apply the next step in the velocity plan.
         """
-        next_v = self.vel_plan.pop(0)
-        self.vel = list(next_v)
-        if not self.vel_plan:
+        if self.vel_plan:
+            next_v = self.vel_plan.pop(0)
+            self.vel = list(next_v)
+        else:
             self.logger.info(f"[Melvin] Velocity plan finished, velocity is {self.vel}.")
 
 

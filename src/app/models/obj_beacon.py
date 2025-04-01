@@ -1,9 +1,31 @@
 import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, List, TypedDict
 
 from src.app.constants import MAP_HEIGHT, MAP_WIDTH
+
+
+class BeaconObjectiveDict(TypedDict):
+    id: int
+    name: str
+    start: str
+    end: str
+    decrease_rate: float
+    attempts_made: int
+    description: str
+
+
+class BeaconObjectiveFullDict(TypedDict):
+    id: int
+    name: str
+    start: str
+    end: str
+    decrease_rate: float
+    attempts_made: int
+    description: str
+    beacon_height: int
+    beacon_width: int
 
 
 @dataclass
@@ -21,7 +43,7 @@ class BeaconObjective:
     height: int
     width: int
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> BeaconObjectiveDict:
         """
         Serialize the full beacon object into a dictionary.
 
@@ -36,8 +58,6 @@ class BeaconObjective:
             "decrease_rate": self.decrease_rate,
             "attempts_made": self.attempts_made,
             "description": self.description,
-            "beacon_height": self.height,
-            "beacon_width": self.width
         }
 
     @staticmethod
@@ -67,7 +87,7 @@ class BeaconObjective:
             width=random.randint(0, MAP_WIDTH)
         )
 
-    def info_to_endpoint(self) -> dict[str, object]:
+    def info_to_endpoint(self) -> BeaconObjectiveDict:
         """
         Return a subset of beacon data suitable for public API exposure.
 

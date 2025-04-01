@@ -3,7 +3,10 @@ import random
 from datetime import timedelta
 
 import numpy as np
-from typing import List, Union, Tuple
+from typing import List, Union, Tuple, Optional, cast
+
+from numpy import floating
+
 from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
     TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST
 
@@ -11,24 +14,6 @@ from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STAND
 class Helpers:
 
     @staticmethod
-    def get_charge_per_sec_enum(state: StateBatteryRate) -> float:
-        """
-        Get the charge rate in battery units per second from a StateBatteryRate enum.
-
-        Args:
-            state (StateBatteryRate): The battery rate enum.
-
-        Returns:
-            float: Battery charge rate per second.
-
-        Raises:
-            RuntimeError: If the input is not a StateBatteryRate.
-        """
-        if isinstance(state, StateBatteryRate):
-            return state.value
-        else:
-            raise RuntimeError(f"Unknown State: {state}")
-
     @staticmethod
     def clamp(n: Union[int, float], minimum: Union[int, float], maximum: Union[int, float]) -> Union[int, float]:
         """
@@ -43,34 +28,6 @@ class Helpers:
             Union[int, float]: Clamped value.
         """
         return max(minimum, min(n, maximum))
-
-    @staticmethod
-    def get_charge_per_sec(state: SatStates) -> float:
-        """
-        Map a SatStates enum to a battery rate and return the corresponding charge rate.
-
-        Args:
-            state (SatStates): Current satellite state.
-
-        Returns:
-            float: Battery charge rate for the state.
-
-        Raises:
-            RuntimeError: If the state is unrecognized.
-        """
-        state_to_battery_rate = {
-            SatStates.DEPLOYMENT: StateBatteryRate.DEPLOYMENT,
-            SatStates.ACQUISITION: StateBatteryRate.ACQUISITION,
-            SatStates.CHARGE: StateBatteryRate.CHARGE,
-            SatStates.TRANSITION: StateBatteryRate.TRANSITION,
-            SatStates.SAFE: StateBatteryRate.SAFE,
-            SatStates.COMMS: StateBatteryRate.COMMS,
-        }
-
-        try:
-            return Helpers.get_charge_per_sec_enum(state_to_battery_rate[state])
-        except KeyError:
-            raise RuntimeError(f"Unknown State: {state}")
 
     @staticmethod
     def get_transition_time(current_state: SatStates, target_state: SatStates) -> int:
@@ -135,11 +92,14 @@ class Helpers:
         Returns:
             float: Noisy measured distance.
         """
-        noise_gain = random.uniform(-1, 1)
-        true_distance = np.linalg.norm(np.array(beac_pos) - np.array(melvin_pos))
-        noise = 3 * BEACON_GUESS_TOLERANCE + 0.1 * (true_distance + 1)
+        noise_gain: float = random.uniform(-1, 1)
 
-        noisy_distance = true_distance + noise_gain * noise
+        true_distance_np: floating = np.linalg.norm(np.array(beac_pos) - np.array(melvin_pos))
+        true_distance: float = float(true_distance_np)
+
+        noise: float = 3.0 * BEACON_GUESS_TOLERANCE + 0.1 * (true_distance + 1)
+
+        noisy_distance: float = true_distance + noise_gain * noise
 
         return noisy_distance
 
@@ -207,7 +167,7 @@ class Helpers:
         return options
 
     @staticmethod
-    def is_pos_in_bounds(position: List[float]) -> bool:
+    def is_pos_in_bounds(position: List[int]) -> bool:
         """
         Validate if position is within map boundaries.
 
@@ -271,17 +231,17 @@ class Helpers:
     @staticmethod
     def validate_velocity_change(old_v: List[float], target_v: List[float]) -> List[Tuple[float, float]]:
         """
-                Generate a velocity change plan from current to target velocity.
+        Generate a velocity change plan from current to target velocity.
 
-                Args:
-                    old_v (List[float]): Current velocity.
-                    target_v (List[float]): Desired velocity.
+        Args:
+            old_v (List[float]): Current velocity.
+            target_v (List[float]): Desired velocity.
 
-                Returns:
-                    List[Tuple[float, float]]: Sequence of velocity steps.
-                """
+        Returns:
+            List[Tuple[float, float]]: Sequence of velocity steps.
+        """
         plan: List[Tuple[float, float]] = []
-        current_v = list(old_v)
+        current_v: List[float] = old_v.copy()
 
         while True:
             dvx = target_v[0] - current_v[0]
@@ -300,6 +260,6 @@ class Helpers:
             step_vy = current_v[1] + ay
 
             current_v = [step_vx, step_vy]
-            plan.append(tuple(current_v))
+            plan.append((ax, ay))
 
         return plan

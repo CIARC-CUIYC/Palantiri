@@ -66,7 +66,7 @@ Can receive target velocity and gradually apply it in validated steps.
    cd Palantiri
    ```
 
-2. **Create and activeate virtual environment**
+2. **Create and activate virtual environment**
    ```bash
    python3.11 -m venv .venv
    source .venv/bin/activate
@@ -84,7 +84,7 @@ Can receive target velocity and gradually apply it in validated steps.
 ---
 ## ⚙️ Configuration of PUT /objective
 Differing from the PUT command at the /objective endpoint of the actual CIARC backend that commanding of the Palantiri
-endpoint differs slighty
+endpoint differs slightly
 ```json
 {
 

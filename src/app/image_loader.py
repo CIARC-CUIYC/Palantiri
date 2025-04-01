@@ -1,10 +1,11 @@
 import logging
 from io import BytesIO
 import tempfile
-from typing import Tuple
+from typing import Tuple, Optional, Any
 
 import cairo
 from PIL import Image
+from PIL.Image import Image as PILImage
 
 Image.MAX_IMAGE_PIXELS = 933120000
 
@@ -31,13 +32,15 @@ class _GError(Structure):
     _fields_ = [("domain", c_uint32), ("code", c_int), ("message", c_char_p)]
 
 
-def _load_rsvg(rsvg_lib_path=None, gobject_lib_path=None):
+def _load_rsvg(rsvg_lib_path: Optional[str] = None, gobject_lib_path: Optional[str] = None) -> CDLL:
     if rsvg_lib_path is None:
         rsvg_lib_path = util.find_library("rsvg-2")
     if gobject_lib_path is None:
         gobject_lib_path = util.find_library("gobject-2.0")
-    l = CDLL(rsvg_lib_path)
-    g = CDLL(gobject_lib_path)
+
+    l: CDLL = CDLL(rsvg_lib_path)
+    g: CDLL = CDLL(gobject_lib_path)
+
     g.g_type_init()
 
     l.rsvg_handle_new_from_file.argtypes = [c_char_p, POINTER(POINTER(_GError))]
@@ -73,11 +76,16 @@ class Handle(object):
         Returns:
             Tuple[int, int]: Width and height of the SVG image.
         """
-        svgDim = self.RsvgDimensionData()
-        _librsvg.rsvg_handle_get_dimensions(self.handle, byref(svgDim))
-        return svgDim.width, svgDim.height
+        props = _RsvgProps()
+        _librsvg.rsvg_handle_get_dimensions(self.handle, byref(props))
+        return props.width, props.height
+        # CHRIS Artifacts
+        # svgDim = self.RsvgDimensionData()
+        # _librsvg.rsvg_handle_get_dimensions(self.handle, byref(svgDim))
+        # return svgDim.width, svgDim.height
 
-    def render_cairo(self, ctx):
+    # NOTE: the type hint 'Any' here is because mypy doesnt accept cairo.Context
+    def render_cairo(self, ctx: Any) -> bool:
         """
         Render SVG to a Cairo context.
         Returns True is drawing succeeded
@@ -88,15 +96,21 @@ class Handle(object):
         Returns:
             bool: Success flag.
         """
-        z = _PycairoContext.from_address(id(ctx))
-        return _librsvg.rsvg_handle_render_cairo(self.handle, z.ctx)
+
+        z: _PycairoContext = _PycairoContext.from_address(id(ctx))
+        result: bool = _librsvg.rsvg_handle_render_cairo(self.handle, z.ctx)
+        return result
+
+        # CHRIS Artifacts
+        # z = _PycairoContext.from_address(id(ctx))
+        # return _librsvg.rsvg_handle_render_cairo(self.handle, z.ctx)
 
 
 PADDING = 600
 
 
 # --- Map generation and overlay handling ---
-def load_map_image() -> Image:
+def load_map_image() -> PILImage:
     """
     Load and render the base map from SVG, then pad and tile it for wraparound.
 
@@ -108,9 +122,14 @@ def load_map_image() -> Image:
     handle = Handle("assets/test_image.svg")
     handle.render_cairo(ctx)
 
-    with tempfile.NamedTemporaryFile(suffix=".png") as f:
-        img.write_to_png(f)
-        base_image = Image.open(f.name)
+    # CHRIS artifact
+    # with tempfile.NamedTemporaryFile(suffix=".png") as f:
+    #    img.write_to_png(f)
+    #    base_image = Image.open(f.name)
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        img.write_to_png(f.name)
+        base_image = Image.open(f.name).convert("RGB")
+
     image = Image.new("RGB", (MAP_WIDTH + (2 * PADDING), MAP_HEIGHT + (2 * PADDING)))
 
     # center
@@ -144,7 +163,7 @@ current_map_image = def_map_image.copy()
 obj_image = Image.open("assets/obj_img.png").convert("RGBA")
 
 
-def get_obj_img() -> Image.Image:
+def get_obj_img() -> PILImage:
     """
     Returns:
         Image.Image: The objective marker image (RGBA).
@@ -181,7 +200,7 @@ def get_map_chunk(center_pos: tuple[int, int], size: int) -> bytes:
     return image_bytes.getvalue()
 
 
-def get_full_map() -> Image:
+def get_full_map() -> PILImage:
     """
     Returns:
         Image.Image: The full, wrapped current map image.
@@ -189,7 +208,7 @@ def get_full_map() -> Image:
     return current_map_image
 
 
-def apply_map_overlay(overlay: Image) -> None:
+def apply_map_overlay(overlay: PILImage) -> None:
     """
     Blend an RGBA overlay onto the current map image using its alpha channel.
 
@@ -207,7 +226,7 @@ def apply_map_overlay(overlay: Image) -> None:
     current_map_image.paste(overlay, (0, 0), mask=alpha)
 
 
-def remove_map_overlay(overlay: Image) -> None:
+def remove_map_overlay(overlay: PILImage) -> None:
     """
     Restore the default map underneath the masked region defined by an overlay.
 

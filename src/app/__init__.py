@@ -4,7 +4,7 @@ from src.app.routes.original_backend import control, objective, observation, res
     daily_map
 
 
-def create_app():
+def create_app() -> Flask:
     """
     Create and configure the Flask application.
 

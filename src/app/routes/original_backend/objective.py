@@ -1,9 +1,12 @@
 import logging
+from typing import Optional, Any
 
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.exceptions import BadRequest
 
+from src.app.models.obj_beacon import BeaconObjective, BeaconObjectiveDict
 from src.app.models.obj_manager import obj_manager
+from src.app.models.obj_zoned import ZonedObjective, ZonedObjectiveDict
 
 bp = Blueprint('objective', __name__)
 
@@ -35,11 +38,11 @@ def add_objectives() -> tuple[Response, int]:
     Returns:
         Tuple[JSON, int]: Response with created objectives, or error.
     """
-    data = request.get_json()
+    data: Optional[dict[str, Any]] = request.get_json()
     if not data:
         raise BadRequest("Missing request body.")
 
-    responses = {
+    responses: dict[str, list[ZonedObjectiveDict | BeaconObjectiveDict]] = {
         "zoned_objectives": [],
         "beacon_objectives": []
     }
@@ -48,8 +51,8 @@ def add_objectives() -> tuple[Response, int]:
     manual_zoned = data.get("zoned_objectives", [])
     for raw_obj in manual_zoned:
         try:
-            new_obj = obj_manager.create_zoned_from_dict(raw_obj)
-            responses["zoned_objectives"].append(new_obj.to_dict())
+            new_zo_obj: ZonedObjective = obj_manager.create_zoned_from_dict(raw_obj)
+            responses["zoned_objectives"].append(new_zo_obj.to_dict())
         except Exception as e:
             raise BadRequest(f"Failed to add zoned objective: {e}")
 
@@ -57,14 +60,14 @@ def add_objectives() -> tuple[Response, int]:
     manual_beacons = data.get("beacon_objectives", [])
     for raw_obj in manual_beacons:
         try:
-            new_obj = obj_manager.create_beacon_from_dict(raw_obj)
-            responses["beacon_objectives"].append(new_obj.to_dict())
+            new_beac_obj: BeaconObjective = obj_manager.create_beacon_from_dict(raw_obj)
+            responses["beacon_objectives"].append(new_beac_obj.to_dict())
         except Exception as e:
             raise BadRequest(f"Failed to add beacon objective: {e}")
 
     # --- Randomly Generated Objectives ---
-    num_rand_zoned = data.get("num_random_zoned", 0)
-    num_rand_beacon = data.get("num_random_beacon", 0)
+    num_rand_zoned: int = data.get("num_random_zoned", 0)
+    num_rand_beacon: int = data.get("num_random_beacon", 0)
 
     new_zo_objs = obj_manager.create_random_zoned_objective(num_rand_zoned)
     new_bo_objs = obj_manager.create_random_beacon_objective(num_rand_beacon)

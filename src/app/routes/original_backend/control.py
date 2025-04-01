@@ -91,17 +91,19 @@ class ControlValidation:
         if not SatStates.is_valid_sat_state(input_state):
             raise BadRequest("Invalid target state")
 
+        desired_state = SatStates(input_state)
+
         if melvin.state == SatStates.TRANSITION:
             raise BadRequest("Target state cannot be set during transition.")
 
-        if input_state == SatStates.DEPLOYMENT:
+        if desired_state == SatStates.DEPLOYMENT:
             raise BadRequest("Target state cannot be set to DEPLOYMENT.")
 
-        if input_state == SatStates.TRANSITION:
+        if desired_state == SatStates.TRANSITION:
             raise BadRequest("Target state cannot be set to TRANSITION.")
 
     @staticmethod
-    def validate_input_angle(input_angle):
+    def validate_input_angle(input_angle: str) -> None:
         """
         Validate the requested camera angle.
 
@@ -112,7 +114,7 @@ class ControlValidation:
             raise BadRequest("Invalid camera angle.")
 
     @staticmethod
-    def validate_input_velocity(input_vel):
+    def validate_input_velocity(input_vel: list[float]) -> None:
         """
         Validate velocity vector is within bounds and not too sharp a turn.
 

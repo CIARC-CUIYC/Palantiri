@@ -45,7 +45,7 @@ def stream_beacon_pings() -> Response:
             if start_of_new_min:
                 melvin_pos_current = melvin.pos
                 for beacon in obj_manager.beacon_list:
-                    actual_beacon_position = [beacon.width, beacon.height]
+                    actual_beacon_position: list[float] = [float(beacon.width), float(beacon.height)]
                     if beacon.is_active(now):
                         true_distance = Helpers.unwrapped_to(
                             melvin_pos_current,

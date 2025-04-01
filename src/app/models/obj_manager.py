@@ -2,8 +2,8 @@ import random
 from datetime import datetime
 from typing import List, Union, Set, Dict
 
-from src.app.models.obj_beacon import BeaconObjective
-from src.app.models.obj_zoned import ZonedObjective
+from src.app.models.obj_beacon import BeaconObjective, BeaconObjectiveDict, BeaconObjectiveFullDict
+from src.app.models.obj_zoned import ZonedObjective, ZonedObjectiveDict
 
 
 class ObjManager:
@@ -17,7 +17,7 @@ class ObjManager:
         self.beacon_list: List[BeaconObjective] = []
         self.zoned_list: List[ZonedObjective] = []
 
-    def get_all_objectives(self) -> Dict[str, List[Dict[str, object]]]:
+    def get_all_objectives(self) -> Dict[str, List[ZonedObjectiveDict | BeaconObjectiveDict]]:
         """
         Return all objectives, grouped by type.
 
@@ -78,7 +78,7 @@ class ObjManager:
 
         return new_beacons
 
-    def create_beacon_from_dict(self, beacon_dict: Dict[str, object]) -> BeaconObjective:
+    def create_beacon_from_dict(self, beacon_dict: BeaconObjectiveFullDict) -> BeaconObjective:
         """
         Create a BeaconObjective from dictionary data (e.g., from JSON).
 
@@ -106,7 +106,7 @@ class ObjManager:
         self.beacon_list.append(new_beac)
         return new_beac
 
-    def create_zoned_from_dict(self, zoned_dict: Dict[str, object]) -> ZonedObjective:
+    def create_zoned_from_dict(self, zoned_dict: ZonedObjectiveDict) -> ZonedObjective:
         """
         Create a ZonedObjective from dictionary data (e.g., from JSON).
 
@@ -118,6 +118,8 @@ class ObjManager:
         """
         start = datetime.fromisoformat(zoned_dict["start"].replace("Z", "+00:00"))
         end = datetime.fromisoformat(zoned_dict["end"].replace("Z", "+00:00"))
+        if isinstance(zoned_dict["zone"], str):
+            raise KeyError("zone must be a list of (int) coordinates")
         # overlay = ZonedObjective.get_overlay(zoned_dict["zone"])
         new_zoned = ZonedObjective(
             id=zoned_dict["id"],

@@ -1,7 +1,7 @@
 import logging
 from typing import Tuple
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response, make_response
 from PIL import Image, ImageChops
 
 from src.app.image_loader import get_full_map
@@ -10,7 +10,7 @@ bp = Blueprint('dailyMap', __name__)
 
 
 @bp.route('/dailyMap', methods=['POST'])
-def upload_daily_map() -> Tuple[dict, int]:
+def upload_daily_map() -> Tuple[Response, int]:
     """
     Handle POST upload of a daily map image and compare it with the original.
 
@@ -23,11 +23,11 @@ def upload_daily_map() -> Tuple[dict, int]:
     try:
         uploaded_file = request.files.get('image')
         if not uploaded_file:
-            return {"error": "No file uploaded."}, 400
+            return make_response({"error": "No file uploaded."}), 400
 
         file_stream = uploaded_file.stream
         uploaded_img = Image.open(file_stream)
-        original_map  = get_full_map()
+        original_map = get_full_map()
 
         diff = ImageChops.difference(uploaded_img, original_map)
         mean_diff = sum(list(diff.getdata())) / (uploaded_img.width * uploaded_img.height * 3)
@@ -35,7 +35,6 @@ def upload_daily_map() -> Tuple[dict, int]:
         logger = logging.getLogger(__name__)
         logger.info(f"Daily Map submitted. Mean difference: {mean_diff}")
 
-        return jsonify("upload successful"), 200
+        return make_response(jsonify("upload successful")), 200
     except Exception as e:
-        return {"error": f"An error occurred: {str(e)}"}, 500
-
+        return make_response({"error": f"An error occurred: {str(e)}"}), 500
