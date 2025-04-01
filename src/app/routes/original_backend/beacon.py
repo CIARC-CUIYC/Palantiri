@@ -27,8 +27,6 @@ def guess_beacon() -> Tuple[Response, int]:
         JSON response with success/failure status and attempt count.
     """
     data: Dict[str, Any] = request.get_json(silent=True) or {}
-    beacon_id: Optional[int] = None
-    guess_pos: List[int] = []
 
     # Fallback to query params if no JSON body
     if not data and request.args:
@@ -42,8 +40,8 @@ def guess_beacon() -> Tuple[Response, int]:
     if not data or 'beacon_id' not in data or 'guess' not in data:
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
-    beacon_id = data['beacon_id']
-    guess_pos = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
+    beacon_id: Optional[int] = data['beacon_id']
+    guess_pos: List[int] = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
 
     BeaconValidation.validate_input_beacon_position(guess_pos)
 

@@ -2,7 +2,7 @@ import logging
 import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
-from typing import Optional, List, Dict, Any, TypedDict, Union
+from typing import Optional, List, Dict, TypedDict, Union
 from ..helpers import Helpers
 
 from PIL import Image

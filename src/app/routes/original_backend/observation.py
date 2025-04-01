@@ -1,4 +1,3 @@
-import logging
 from typing import Tuple
 
 from flask import Blueprint, jsonify, Response

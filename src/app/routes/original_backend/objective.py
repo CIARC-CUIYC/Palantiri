@@ -1,4 +1,3 @@
-import logging
 from typing import Optional, Any
 
 from flask import Blueprint, request, jsonify, Response

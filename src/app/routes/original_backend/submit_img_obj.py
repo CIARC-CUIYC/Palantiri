@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify
-from PIL import Image, ImageChops
+from flask import request, jsonify
+from PIL import Image
 import logging
 
 from src.app.models.obj_manager import obj_manager

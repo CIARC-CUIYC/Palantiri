@@ -3,11 +3,11 @@ import random
 from datetime import timedelta
 
 import numpy as np
-from typing import List, Union, Tuple, Optional, cast
+from typing import List, Union, Tuple
 
 from numpy import floating
 
-from src.app.constants import SatStates, StateBatteryRate, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
+from src.app.constants import SatStates, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
     TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST
 
 

@@ -1,7 +1,7 @@
 import random
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass
-from typing import Tuple, List, TypedDict
+from typing import Tuple, TypedDict
 
 from src.app.constants import MAP_HEIGHT, MAP_WIDTH
 
