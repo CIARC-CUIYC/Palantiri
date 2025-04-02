@@ -1,3 +1,4 @@
+![CI](https://github.com/CIARC-CUIYC/Palantiri/actions/workflows/build-docker.yaml/badge.svg)
 # 🔮 Palantíri SIL Framework
 
 **Palantíri** (Quenya plural of *Palantír*, “far-seer”) is a Python-based **Software-in-the-Loop (SIL)** simulation framework 
