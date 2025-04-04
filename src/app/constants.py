@@ -50,7 +50,7 @@ class SatStates(Enum):
     DEPLOYMENT = "deployment"
     ACQUISITION = "acquisition"
     CHARGE = "charge"
-    COMMS = "comms"
+    COMMS = "communication"
     SAFE = "safe"
     TRANSITION = "transition"
 
