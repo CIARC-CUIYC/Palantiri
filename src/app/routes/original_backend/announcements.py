@@ -1,4 +1,5 @@
 import time
+import logging
 from datetime import timezone
 from typing import Generator
 
@@ -9,6 +10,8 @@ from src.app.helpers import Helpers
 from src.app.models.melvin import melvin
 from src.app.models.obj_manager import obj_manager
 from src.app.sim_clock import sim_clock
+
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('announcements', __name__)
 
@@ -23,6 +26,7 @@ def stream_beacon_pings() -> Response:
     Returns:
         Response: A streaming HTTP response with `text/event-stream` MIME type.
     """
+
     def event_stream() -> Generator[str, None, None]:
         """
         Generator function that yields beacon ping data to the client every second
@@ -56,7 +60,7 @@ def stream_beacon_pings() -> Response:
                             noisy_distance = Helpers.receive_noisy_measurement(actual_beacon_position,
                                                                                melvin_pos_current)
 
-                            print(f"Sending SSE ping: ID_{beacon.id} DISTANCE_{noisy_distance:.2f}")
+                            logger.debug(f"Sending SSE ping: ID_{beacon.id} DISTANCE_{noisy_distance:.2f}")
 
                             yield f"data: ID_{beacon.id} DISTANCE_{noisy_distance:.2f}\n\n"
 

@@ -28,7 +28,7 @@ def guess_beacon() -> Tuple[Response, int]:
     """
     data: Dict[str, Any] = request.get_json(silent=True) or {}
 
-    # Fallback to query params if no JSON body
+    # Fallback to query params
     if not data and request.args:
         _beacon_id = request.args.get("beacon_id", type=int)
         _guess_pos = [
@@ -37,41 +37,62 @@ def guess_beacon() -> Tuple[Response, int]:
         ]
         data = {"beacon_id": _beacon_id, "guess": _guess_pos}
 
-    if not data or 'beacon_id' not in data or 'guess' not in data:
+    if not data or "beacon_id" not in data or "guess" not in data:
         raise BadRequest("Payload must include 'beacon_id' and 'guess' (x, y).")
 
-    beacon_id: Optional[int] = data['beacon_id']
-    guess_pos: List[int] = data['guess'][::-1]  # has to be flipped because it's given in [height, width]
+    beacon_id: Optional[int] = data["beacon_id"]
+    guess_pos: List[int] = data["guess"][::-1]
+
+    if beacon_id is None or not isinstance(beacon_id, int):
+        raise BadRequest("'beacon_id' must be a valid integer.")
 
     BeaconValidation.validate_input_beacon_position(guess_pos)
 
     beacon = next((b for b in obj_manager.beacon_list if b.id == beacon_id), None)
+
     if not beacon:
-        return jsonify({"error": "Beacon not found."}), 404
-
-    if not isinstance(beacon_id, int):
-        raise BadRequest("'beacon_id' must be an integer.")
-
-    if beacon_id is None:
-        return jsonify({"error": "Missing 'beacon_id' in request body."}), 400
+        return jsonify({
+            "status": "Could not find beacon.",
+            "attempts_made": 0
+        }), 404
 
     beacon_guess_tracker.setdefault(beacon_id, 0)
 
+    # Too many attempts already
     if beacon_guess_tracker[beacon_id] >= 3:
-        return jsonify({"error": "Maximum number of guesses reached for this beacon."}), 403
+        return jsonify({
+            "status": "The beacon could not be found.",
+            "attempts_made": beacon_guess_tracker[beacon_id]
+        }), 200
 
-    true_beac_pos: List[float] = [float(beacon.width), float(beacon.height)]
-    guess_pos_float: List[float] = [float(guess_pos[0]), float(guess_pos[1])]
+    true_pos = [float(beacon.width), float(beacon.height)]
+    guess_pos_float = [float(guess_pos[0]), float(guess_pos[1])]
+    distance = Helpers.unwrapped_to(true_pos, guess_pos_float)
 
-    guess_beac_distance: float = Helpers.unwrapped_to(true_beac_pos, guess_pos_float)
-    beacon_guess_tracker[beacon_id] += 1
-
-    if guess_beac_distance <= BEACON_GUESS_TOLERANCE:
+    # Successful guess
+    if distance <= BEACON_GUESS_TOLERANCE:
         obj_manager.obj_list.remove(beacon)
         obj_manager.beacon_list.remove(beacon)
-        return jsonify({"status": "success", "attempts_made": beacon_guess_tracker[beacon_id]}), 200
-    else:
-        return jsonify({"status": "failure", "attempts_made": beacon_guess_tracker[beacon_id]}), 200
+        beacon_guess_tracker[beacon_id] += 1
+        return jsonify({
+            "status": "The beacon was found!",
+            "attempts_made": beacon_guess_tracker[beacon_id]
+        }), 200
+
+    # Failed guess
+    beacon_guess_tracker[beacon_id] += 1
+
+    # Failed last guess
+    if beacon_guess_tracker[beacon_id] == 3:
+        return jsonify({
+            "status": "No more rescue attempts. The beacon has not be found.",
+            "attempts_made": beacon_guess_tracker[beacon_id]
+        }), 200
+
+    return jsonify({
+        "status": "The beacon could not be found.",
+        "attempts_made": beacon_guess_tracker[beacon_id]
+    }), 200
 
 
 class BeaconValidation:
