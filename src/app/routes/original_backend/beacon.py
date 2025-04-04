@@ -49,10 +49,13 @@ def guess_beacon() -> Tuple[Response, int]:
     if not beacon:
         return jsonify({"error": "Beacon not found."}), 404
 
-    if beacon_id:
-        beacon_guess_tracker.setdefault(beacon_id, 0)
-    else:
+    if not isinstance(beacon_id, int):
+        raise BadRequest("'beacon_id' must be an integer.")
+
+    if beacon_id is None:
         return jsonify({"error": "Missing 'beacon_id' in request body."}), 400
+
+    beacon_guess_tracker.setdefault(beacon_id, 0)
 
     if beacon_guess_tracker[beacon_id] >= 3:
         return jsonify({"error": "Maximum number of guesses reached for this beacon."}), 403
