@@ -1,4 +1,4 @@
-![CI](https://github.com/CIARC-CUIYC/Palantiri/actions/workflows/build-docker.yaml/badge.svg)
+![Docker](https://github.com/CIARC-CUIYC/Palantiri/actions/workflows/build-docker.yaml/badge.svg)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 # 🔮 Palantíri SIL Framework
 

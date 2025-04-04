@@ -1,12 +1,65 @@
-name: "Build Image"
-on: [push]
+name: "Build Docker Image and Publish"
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+concurrency:
+  group: "docker"
+  cancel-in-progress: true
+env:
+  REGISTRY: ghcr.io
+  ORG_NAME: ciarc-cuiyc
+  IMAGE_NAME: cuiyc.palantiri
 jobs:
-  build-docker:
-    name: "Build docker on arche"
-    if: ${{ github.ref == 'refs/heads/master' || contains(github.event.head_commit.message, '[force-container]') }}
-    runs-on: arche
+  publish-docker:
+    name: "Build docker and publish"
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Docker build
-        run: docker build . --tag sil-adapter:latest
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@v3.5.0
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log into registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{env.ORG_NAME}}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+
+      - name: Build and push Docker image
+        id: build-and-push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sign the published Docker image
+        if: ${{ github.event_name != 'pull_request' }}
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          DIGEST: ${{ steps.build-and-push.outputs.digest }}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
