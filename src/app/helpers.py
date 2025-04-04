@@ -1,5 +1,6 @@
 import math
 import random
+import logging
 from datetime import timedelta
 
 import numpy as np
@@ -10,10 +11,11 @@ from numpy import floating
 from src.app.constants import SatStates, TRANSITION_TIME_STANDARD, TRANSITION_TIME_TO_SAFE, \
     TRANSITION_TIME_FROM_SAFE, BEACON_GUESS_TOLERANCE, MAP_WIDTH, MAP_HEIGHT, ACC_CONST
 
+logger = logging.getLogger(__name__)
+
 
 class Helpers:
 
-    @staticmethod
     @staticmethod
     def clamp(n: Union[int, float], minimum: Union[int, float], maximum: Union[int, float]) -> Union[int, float]:
         """
@@ -260,6 +262,6 @@ class Helpers:
             step_vy = current_v[1] + ay
 
             current_v = [step_vx, step_vy]
-            plan.append((ax, ay))
+            plan.append((step_vx, step_vy))
 
         return plan

@@ -8,6 +8,8 @@ from src.app.helpers import Helpers
 from src.app.models.melvin import melvin
 from werkzeug.exceptions import BadRequest
 
+logger = logging.getLogger(__name__)
+
 bp = Blueprint('control', __name__)
 
 
@@ -46,9 +48,13 @@ def control() -> Tuple[Response, int]:
                 status_code = 400
 
         try:
+            data["vel_x"] = round(float(data["vel_x"]), 2)
+            data["vel_y"] = round(float(data["vel_y"]), 2)
+            assert isinstance(data["vel_x"], float) and isinstance(data["vel_y"], float)
+
             ControlValidation.validate_input_angle(data["camera_angle"])
             ControlValidation.validate_input_velocity([data["vel_x"], data["vel_y"]])
-            assert (type(data["vel_x"]) == float and type(data["vel_y"]) == float)
+
             if SatStates(melvin.state) == SatStates.ACQUISITION:
                 melvin.update_control(
                     vel_x=data["vel_x"],
@@ -56,7 +62,6 @@ def control() -> Tuple[Response, int]:
                     camera_angle=data["camera_angle"],
                 )
             else:
-                logger = logging.getLogger(__name__)
                 logger.warning("Cant change velocity and angle when not in acquisition")
 
             response["status"] = "Control values updated successfully."
@@ -67,6 +72,8 @@ def control() -> Tuple[Response, int]:
         except BadRequest as e:
             response["error"] = str(e)
             status_code = 400
+        except (ValueError, TypeError):
+            raise BadRequest("Velocity inputs must be numeric values.")
 
         return jsonify(response), status_code
 
