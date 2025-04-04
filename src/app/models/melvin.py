@@ -123,7 +123,7 @@ class Melvin:
             "fuel": round(self.fuel, 2),
             "distance_covered": 1.0,
             "area_covered": {"narrow": 0.0, "normal": 0.0, "wide": 0.0},
-            "data_volume": {"data_volume_sent": 0.0, "data_volume_received": 0.0},
+            "data_volume": {"data_volume_sent": 0, "data_volume_received": 0},
             "images_taken": 0,
             "active_time": 0.0,
             "objectives_done": 0,
