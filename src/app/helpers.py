@@ -96,8 +96,7 @@ class Helpers:
         """
         noise_gain: float = random.uniform(-1, 1)
 
-        true_distance_np: floating = np.linalg.norm(np.array(beac_pos) - np.array(melvin_pos))
-        true_distance: float = float(true_distance_np)
+        true_distance: float = Helpers.unwrapped_to(beac_pos, melvin_pos)
 
         noise: float = 3.0 * BEACON_GUESS_TOLERANCE + 0.1 * (true_distance + 1)
 
@@ -162,7 +161,7 @@ class Helpers:
                 target = [object_2[0] + MAP_WIDTH * x_sign, object_2[1] + MAP_HEIGHT * y_sign]
 
                 to_target = Helpers.to(object_1, target)
-                to_target_abs_sq = math.sqrt(to_target[0] ** 2 + to_target[1] ** 2)
+                to_target_abs_sq = math.hypot(to_target[0], to_target[1])
 
                 options.append((to_target, to_target_abs_sq))
 
