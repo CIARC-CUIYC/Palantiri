@@ -19,7 +19,6 @@ In addition, it accurately models beacons and zones—both known and secret—al
 - 🔊 Real-time SSE (Server-Sent Events) for beacon pings
 - 🎯 Objective management: zoned & beacon-based
 - ⚡  Lightweight Flask backend for easy integration with external systems
-- 🗺️ TODO: objective images and compression
 ---
 
 ## 📁 Folder Structure
@@ -49,11 +48,12 @@ Can receive target velocity and gradually apply it in validated steps.
 - `obj_manager.py`: Simulates backend behavior in objective management for both beacon and zoned obj
 
 ### **Flask Endpoints (app/routes`)**
-- `GET /observation`: Returns MELVIN’s current telemetry
+- `GET /announcements`: SSE stream emitting beacon pings
+- `PUT /beacon`: Submission of Beacon Position estimate
 - `PUT /control`: Command a new target velocity and camera state
-- `GET /announcements`: SSE stream emitting beacon pings if active & in range
-- `PUT /beacon`: Guess a beacon's location
 - `GET|PUT|DELETE /objective`: Manage objectives manually or randomly
+- `GET /observation`: Returns MELVIN’s current telemetry
+- `GET /reset`: Resets simlulation
 
 
 
